@@ -51,19 +51,13 @@ UUID=*)
 	;;
 esac
 
-SWAPTYPE=$(wait-for-root "${resume}" ${RESUMEDELAY:-5})
+[ ! -e "${resume}" ] && exit 0
 
-case "${SWAPTYPE}" in
-    swsuspend|s1suspend|s2suspend|ulsuspend|tuxonice)
-	if [ -x /bin/plymouth ] && plymouth --ping; then
-		plymouth message --text="Resuming from $resume"
-	fi
+[ ! -e /sys/power/resume ] && exit 0
 
-	# hardcode path, uswsusp ships an resume binary too
-	if [ -n "${resume_offset}" ]; then
-		/bin/resume ${resume} ${resume_offset}
-	else
-		/bin/resume ${resume}
-	fi
-	;;
-esac
+# hardcode path, uswsusp ships an resume binary too
+if [ -n "${resume_offset}" ]; then
+	/bin/resume ${resume} ${resume_offset}
+else
+	/bin/resume ${resume}
+fi

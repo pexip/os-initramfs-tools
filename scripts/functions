@@ -31,42 +31,6 @@ log_end_msg()
 	_log_msg "done.\n"
 }
 
-# Add failure hook
-add_mountroot_fail_hook()
-{
-	mkdir -p /tmp/mountroot-fail-hooks.d
-	ln -s "$0" /tmp/mountroot-fail-hooks.d/"$1"
-}
-
-# Run failure hooks.
-# When a failure hook exits "1", it has not done anything to correct the
-# system.  Exiting "0" means that something has been attempted to resolve
-# the lack of a root filesystem.
-# Hooks are run in lexigraphical order, and are responsible for removing
-# themselves if they should not re-run in a later cycle.  When one exits
-# "0", the stack is stopped, so the caller can return to the main rootfs
-# wait loop.
-try_failure_hooks()
-{
-	local hook
-
-	# Disable usplash so text from hooks can be seen
-	if [ -x /sbin/usplash_write ]; then
-		/sbin/usplash_write "QUIT"
-	fi
-	chvt 1
-	if [ -x /bin/plymouth ] && plymouth --ping; then
-		/bin/plymouth hide-splash > /dev/null 2>&1
-	fi
-
-	for hook in /tmp/mountroot-fail-hooks.d/*; do
-		if [ -x ${hook} ] && ${hook} mountfail; then
-			return 0
-		fi
-	done
-	return 1
-}
-
 panic()
 {
 	if command -v chvt >/dev/null 2>&1; then
@@ -80,17 +44,20 @@ panic()
 		sleep ${panic}
 		reboot
 	fi
-	modprobe i8042
-	modprobe atkbd
-
-	run_scripts /scripts/panic
-
+	modprobe -v i8042 || true
+	modprobe -v atkbd || true
+	modprobe -v ehci-pci || true
+	modprobe -v ehci-orion || true
+	modprobe -v ehci-hcd || true
+	modprobe -v uhci-hcd || true
+	modprobe -v ohci-hcd || true
+	modprobe -v usbhid || true
 	REASON="$@" PS1='(initramfs) ' /bin/sh -i </dev/console >/dev/console 2>&1
 }
 
 maybe_break()
 {
-	if echo "${break:-}" | egrep -q "(,|^)$1(,|$)"; then
+	if [ "${break:-}" = "$1" ]; then
 		panic "Spawning shell within the initramfs"
 	fi
 }
@@ -111,7 +78,7 @@ set_initlist()
 		case ${si_x#${initdir}/} in
 		*[![:alnum:]\._-]*)
 			[ "${verbose}" = "y" ] \
-			&& echo "$si_x ignored: not alphanumeric or '_' file"
+			&& echo "$si_x ignored: not alphanumeric or '_' file" >&2
 			continue
 			;;
 		esac
@@ -119,21 +86,21 @@ set_initlist()
 		# skip non executable scripts
 		if [ ! -x ${si_x} ]; then
 			[ "${verbose}" = "y" ] \
-			&& echo "$si_x ignored: not executable"
+			&& echo "$si_x ignored: not executable" >&2
 			continue
 		fi
 
 		# skip directories
 		if [ -d ${si_x} ]; then
 			[ "${verbose}" = "y" ] \
-			&& echo "$si_x ignored: a directory"
+			&& echo "$si_x ignored: a directory" >&2
 			continue
 		fi
 
 		# skip bad syntax
 		if ! sh -n ${si_x} ; then
 			[ "${verbose}" = "y" ] \
-			&& echo "$si_x ignored: bad syntax"
+			&& echo "$si_x ignored: bad syntax" >&2
 			continue
 		fi
 
@@ -146,58 +113,20 @@ reduce_satisfied()
 	deplist="$(render array_${1})"
 	unset tmpdeplist
 	for rs_y in ${deplist}; do
-		# check if there are alternatives
+		# only allow variable name chars
 		case ${rs_y} in
-		*\|*)
-			OLD_IFS="$IFS"
-			IFS="|"
-			for rs_z in ${rs_y}; do
-				IFS="$OLD_IFS"
-				# only allow variable name chars
-				case ${rs_z} in
-				*[![:alnum:]\._-]*)
-						IFS="|"
-						continue
-						;;
-				esac
-				# skip non executable scripts
-				if [ ! -x ${initdir}/${rs_z} ]; then
-					IFS="|"
-					continue
-				fi
-				# skip directories
-				if [ -d ${initdir}/${rs_z} ]; then
-					IFS="|"
-					continue
-				fi
-				# skip bad syntax
-				if ! sh -n ${initdir}/${rs_z}; then
-					IFS="|"
-					continue
-				fi
-
-				tmpdeplist="${tmpdeplist} ${rs_z}"
-				break
-			done
-			IFS="$OLD_IFS"
-			;;
-		*)
-			# only allow variable name chars
-			case ${rs_y} in
-			*[![:alnum:]\._-]*)
-				continue
-				;;
-			esac
-			# skip non executable scripts
-			[ ! -x ${initdir}/${rs_y} ] && continue
-			# skip directories
-			[ -d ${initdir}/${rs_y} ] && continue
-			# skip bad syntax
-			sh -n ${initdir}/${rs_y} || continue
-
-			tmpdeplist="${tmpdeplist} ${rs_y}"
+		*[![:alnum:]\._-]*)
+			continue
 			;;
 		esac
+		# skip non executable scripts
+		[ ! -x ${initdir}/${rs_y} ] && continue
+		# skip directories
+		[ -d ${initdir}/${rs_y} ] && continue
+		# skip bad syntax
+		sh -n ${initdir}/${rs_y} || continue
+
+		tmpdeplist="${tmpdeplist} ${rs_y}"
 	done
 	deplist=${tmpdeplist}
 	for rs_x in ${runlist}; do
@@ -282,21 +211,13 @@ call_scripts()
 	set -e
 	for cs_x in ${runlist}; do
 		[ -f ${initdir}/${cs_x} ] || continue
-		if [ x"$1" = "xoptional" ]; then
-			option=$(sed '/^OPTION=/!d;$d;s/^OPTION=//;s/[[:space:]]*$//' "${initdir}/${cs_x}")
-			[ -z "${option}" ] || eval test -n \"\${$option}\" -a \"\${$option}\" != \"n\" || continue
-		fi
-
 		# mkinitramfs verbose output
 		if [ "${verbose}" = "y" ]; then
 			echo "Calling hook ${cs_x}"
 		fi
 		${initdir}/${cs_x} && ec=$? || ec=$?
 		# allow hooks to abort build:
-		# (except for iscan, due to a widely-deployed third-party
-		# package causing upgrade problems)
-		if [ "$ec" -ne 0 ] && [ "${cs_x}" != iscan ] && \
-		   [ "${cs_x}" != iscan-data ]; then
+		if [ "$ec" -ne 0 ]; then
 			echo "E: ${initdir}/${cs_x} failed with return $ec."
 			# only errexit on mkinitramfs
 			[ -n "${version}" ] && exit $ec
@@ -322,7 +243,7 @@ run_scripts()
 	else
 		get_prereqs
 		reduce_prereqs
-		call_scripts $2
+		call_scripts
 	fi
 }
 
@@ -355,9 +276,9 @@ parse_numeric() {
 		return
 		;;
 	[0-9]*:[0-9]*)
-		minor=$(echo ${1#*:} | sed -e 's/^0*//')
-		major=$(echo ${1%:*} | sed -e 's/^0*//')
-	;;
+		minor=$(( ${1#*:} ))
+		major=$(( ${1%:*} ))
+		;;
 	[A-Fa-f0-9]*)
 		value=$(( 0x${1} ))
 		minor=$(( ${value} % 256 ))
@@ -441,7 +362,9 @@ configure_networking()
 	fi
 
 	# networking already configured thus bail out
-	[ -n "${DEVICE}" ] && [ -e /tmp/net-"${DEVICE}".conf ] && return 0
+	[ -n "${DEVICE}" ] && [ -e /run/net-"${DEVICE}".conf ] && return 0
+
+	wait_for_udev 10
 
 	# support ip options see linux sources
 	# Documentation/filesystems/nfs/nfsroot.txt
@@ -452,7 +375,7 @@ configure_networking()
 		# The NIC is to be configured if this file does not exist.
 		# Ip-Config tries to create this file and when it succeds
 		# creating the file, ipconfig is not run again.
-		for x in /tmp/net-"${DEVICE}".conf /tmp/net-*.conf ; do
+		for x in /run/net-"${DEVICE}".conf /run/net-*.conf ; do
 			[ -e "$x" ] && break 2
 		done
 
@@ -473,7 +396,7 @@ configure_networking()
 			# grab device entry from ip option
 			NEW_DEVICE=${IP#*:*:*:*:*:*}
 			if [ "${NEW_DEVICE}" != "${IP}" ]; then
-				NEW_DEVICE=${NEW_DEVICE%:*}
+				NEW_DEVICE=${NEW_DEVICE%%:*}
 			else
 				# wrong parse, possibly only a partial string
 				NEW_DEVICE=
@@ -488,11 +411,11 @@ configure_networking()
 	# source ipconfig output
 	if [ -n "${DEVICE}" ]; then
 		# source specific bootdevice
-		. /tmp/net-${DEVICE}.conf
+		. /run/net-${DEVICE}.conf
 	else
 		# source any interface...
 		# ipconfig should have quit after first response
-		. /tmp/net-*.conf
+		. /run/net-*.conf
 	fi
 }
 

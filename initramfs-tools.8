@@ -42,19 +42,6 @@ The default is 180 seconds.
 set the file system mount option string.
 
 .TP
-\fB\fI loop= "<path to image>"
-path within the original root file system to loop-mount and use as the real
-root file system.
-
-.TP
-\fB\fI loopfstype
-set the loop file system type, if applicable.
-
-.TP
-\fB\fI loopflags
-set the loop file system mount option string, if applicable.
-
-.TP
 \fB\fI nfsroot
 can be either "auto" to try to get the relevant information from DHCP or a
 string of the form NFSSERVER:NFSPATH or NFSSERVER:NFSPATH:NFSOPTS.
@@ -79,8 +66,9 @@ either local or NFS (affects which initramfs scripts are run, see the "Subdirect
 
 .TP
 \fB\fI resume
-On install initramfs-tools tries to autodetect the resume partition. On success
-the RESUME variable is written to /etc/initramfs-tools/conf.d/resume.
+The resume hook tries to autodetect the resume partition and uses the first
+swap partition as valid guess. It is possible to set the RESUME variable in
+/etc/initramfs-tools/conf.d/resume.
 The boot variable noresume overrides it.
 
 .TP
@@ -156,6 +144,12 @@ Hooks can be found in two places: /usr/share/initramfs-tools/hooks and
 initramfs-image and are responsible for including all the necessary components
 in the image itself. No guarantees are made as to the order in which the
 different scripts are executed unless the prereqs are setup in the script.
+Please notice that PREREQ is only honored inside a single directory.  So first
+the scripts in /usr/share/initramfs-tools are ordered according to their PREREQ
+values and executed. Then all scripts in /etc/initramfs-tools are ordered
+according to \fBtheir\fR PREREQ values and executed. This mean that currently
+there is no possibility to have a local script (/etc/initramfs-tools) get
+executed before one from the package (/usr/share/initramfs-tools).
 
 .SS Header
 In order to support prereqs, each script should begin with the following lines:
@@ -247,15 +241,29 @@ and copy them to the initramfs. This means that most executables, unless
 compiled with klibc, will automatically include glibc in the image which will
 increase its size by several hundred kilobytes.
 
+.SS Including a system firmware preimage (early initramfs)
+If you need to prepend data to the initramfs image, you need to prepare it
+in a file, and call the \fB\fIprepend_earlyinitramfs\fR function.  The file
+can be disposed of as soon as the function returns.
+
+.B Example:
+.nf
+TEMP_FILE=$(mktemp ...)
+  ...
+prepend_earlyinitramfs ${TEMP_FILE}
+rm -f ${TEMP_FILE}
+
+.RE
+
 .SS Exported variables
 mkinitramfs sets several variables for the hook scripts environment.
 
 .TP
 \fB\fI MODULESDIR
-corresponds to the linux-2.6 modules dir.
+corresponds to the linux modules dir.
 .TP
 \fB\fI version
-is the $(uname \-r) linux-2.6 version against mkinitramfs is run.
+is the $(uname \-r) linux version against mkinitramfs is run.
 .TP
 \fB\fI CONFDIR
 is the path of the used initramfs-tools configurations.
@@ -268,6 +276,9 @@ allows arch specific hook additions.
 .TP
 \fB\fI verbose
 corresponds to the verbosity of the update-initramfs run.
+.TP
+\fB\fI KEYMAP
+sets if a keymap needs to be added to initramfs.
 .TP
 \fB\fI MODULES
 specifies which kind of modules should land on initramfs.
@@ -374,20 +385,6 @@ user to investigate the situation.
 .PP
 .B Example:
 panic "Frobnication failed"
-.fi
-.RE
-.RE
-
-.TP
-\fB\fI
-add_mountroot_fail_hook
-Registers the script as able to provide possible further information, in the
-event that the root device cannot be found. See the example script in the
-initramfs-tools examples directory for more information.
-.RS
-.PP
-.B Example:
-add_mountroot_fail_hook
 .RE
 
 .SS Subdirectories
