@@ -1,3 +1,9 @@
+initramfs-tools (0.99ubuntu13.4pexip1) pexip; urgency=low
+
+  * Prepare Pexip packaging
+
+ -- John-Mark Bell <jmb@pexip.com>  Fri, 27 Dec 2013 16:02:48 +0000
+
 initramfs-tools (0.99ubuntu13.4) precise; urgency=low
 
   * Add ohci_pci to the list of USB host modules included in the initramfs,
