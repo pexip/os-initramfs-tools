@@ -1,3 +1,246 @@
+initramfs-tools (0.120+deb8u2) jessie; urgency=medium
+
+  * [7863219] hook-functions: Include drivers/nvme in block driver modules
+    (Closes: #807000)
+  * [fcef753] hook-functions: Create ORDER files even if there are no valid
+    scripts (Closes: #814965)
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Sun, 17 Apr 2016 18:20:09 +0100
+
+initramfs-tools (0.120+deb8u1) jessie; urgency=medium
+
+  [ Ben Hutchings ]
+  * [c367d7d] scripts/functions: Use shell to create stamp file instead of
+    'touch' (Closes: #783291)
+  * [d22b95b] update-initramfs: Run 'sync' after writing the initramfs
+    (Closes: #783620)
+  * [c22cefe] hook-functions: Add support for nvme devices with MODULES=dep
+    (Closes: #785147)
+  * [e0b23a1] hook-functions: Add support for LVM/LUKS on mmcblk and nvme
+    devices with MODULES=dep (Closes: #747871, #810808)
+  * [0e905aa] scripts/functions: Fix fsck display options (Closes: #781239)
+
+  [ Laurent Bigonville ]
+  * [3c4b38a] Support fsck.mode= and fsck.repair= parameters as known by
+    systemd-fsck (Closes: #783410, #792557)
+  * [dcb0f0c] Run new panic scripts just before dropping to a shell
+    (Closes: #602331)
+
+  [ Boris Egorov ]
+  * [2c82cf4] mkinitramfs: fix bashism in script (Closes: #633582)
+
+  [ Andy Whitcroft ]
+  * [97b664e] When adding i8042 also add psmouse as some keyboards are behind
+    the mouse (Closes: #795839)
+
+  [ Salvatore Bonaccorso ]
+  * [71e5b62] scripts/nfs: Check return value from nfs_mount_root_impl
+    (Closes: #782641)
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Sat, 20 Feb 2016 15:48:17 +0000
+
+initramfs-tools (0.120) unstable; urgency=medium
+
+  * [23ee5f9] Add '.log' to fsck log output file, and document its existence
+    (Closes: #780352)
+  * [b87e34b] Remove old comment about running shell on failure of fsck
+  * [864c04b] Create stamp files to tell the real init system fsck was
+    successful (Closes: #782481)
+  * [f54fe54] NEWS: Improve wording of the entry about mdadm's INITRDSTART
+    setting
+  * [25ab961] NEWS: Add entries about other ways of mounting /usr that won't
+    work
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Mon, 13 Apr 2015 01:18:06 +0100
+
+initramfs-tools (0.119) unstable; urgency=medium
+
+  The "Wait smarter not harder" release
+
+  [ Ben Hutchings ]
+  * [bf238f6] Always generate ORDER files in mkinitramfs (Closes: #688794)
+  * [8529550] Move get_source, set_initlist, get_prereq_pairs, call_scripts to
+    hook-functions
+  * [6ba2e93] hook-functions: Add modules for various important device types
+    (Closes: #762042)
+  * [9c8bde8] mkinitramfs.8: Update default temporary directory
+    (Closes: #764388)
+  * [1bd461e] initramfs-tools.8: Refer to lsinitramfs rather than suggesting
+    gunzip | cpio (Closes: #764022)
+  * [64d39d0] Add comment to /usr/share/initramfs-tools/modules that it is not
+    a config file (Closes: #752789)
+  * [4f1414b] initramfs-tools.8: Improve documentation of break parameter.
+    Thanks to Helmut Grohne <helmut@subdivi.de> (Closes: #707583)
+  * [a5fbfb8] update-initramfs: Fix error message in case of excess arguments
+    (Closes: #627547)
+  * [738678f] initramfs.conf.5: Update configuration directory (Closes: #759552)
+  * [3862d9b] update-initramfs: Consistently show which options take arguments
+    (Closes: #762768)
+  * [35bdb74] Refer to lsinitramfs(8) from {initramfs-tools,mkinitramfs,
+    update-initramfs}(8) (Closes: #764020)
+  * [cf9691d] mkinitramfs: Use default xz compression level rather than -8
+    (Closes: #697335)
+  * [10ebca7] mkinitramfs: Improve warning text when missing modules.
+    Thanks to Trent W. Buck <trentbuck@gmail.com> (Closes: #744836)
+  * [540dcb6] initramfs-tools.8: Refer to 'phase' rather than 'stage' of
+    initramfs execution
+  * [c7a3b31] initramfs-tools.8: Briefly document the kernel hooks
+  * [274f945] hooks/fsck: Remove dependency on hwclock by disabling e2fsck time
+    check
+  * [1780a66] checkfs: Continue unless fsck reports uncorrectable errors
+    (Closes: #765614)
+  * [e5526cd] checkfs: Correct error messages and emergency shell in case of
+    failure
+  * [9daea18] hooks/fsck: Fix type lookup for mount by UUID or label with
+    type=auto (Closes: #766448)
+  * [2b1d834] dep_add_modules: Add modules needed for /usr device
+  * [a164229] NEWS: Begin a NEWS entry for the fsck and /usr-mount changes
+  * [2bbe817] NEWS: Document the possible need to update mdadm INITRDSTART
+    (Closes: #771301)
+  * [884a518] control: Ensure cryptsetup is upgraded to support mounting /usr
+  * [7b4635c] Allow passing arguments to hooks and scripts
+  * [2e2f753] local: Call local-block boot scripts to prepare additional block
+    devices
+  * [3a1db85] control: Add versioned Breaks on lvm2 without a local-block boot
+    script (Closes: #762984)
+  * [d4e5601] local: Invoke local-block scripts from the loop in
+    local_device_setup (Closes: #678696)
+  * [8402332] local: Use max(30, rootdelay) as timeout for block device to
+    appear
+  * [adfa0f6] NEWS: Add an entry about e2fsck behaviour with RTC set to local
+    time
+
+  [ Bastian Blank ]
+  * [9bc3a78] hook-functions: Add xhci-pci to module list (Closes: #773250)
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Sun, 01 Mar 2015 23:58:49 +0000
+
+initramfs-tools (0.118) unstable; urgency=medium
+
+  [ Ben Hutchings ]
+  * [70e371f] manual_add_modules: Set the kernel version when checking module
+    firmware deps
+  * [fdec1d3] lsinitramfs: Move the decompress | cpio pipeline into a function
+  * [d5f4cd6] lsinitramfs: Parse and list files that include early microcode.
+    Thanks to Brett Parker and Olivier Berger. (Closes: #717805)
+  * [f868c43] lsinitramfs: Include -l option in usage message
+  * [f4c512e] Add more sanity checks on root device name in dep_add_modules
+  * [d58a65b] Support MODULES=dep usage when root was mounted from hidden
+    /dev/root (Closes: #689942)
+  * [ebf275a] Check for root device's module dependencies at all levels of
+    device hierarchy
+  * [52abbfb] init: Decide what the real init is immediately before mounting
+    /usr
+  * [25aa264] init: Fix validation of the real init program
+  * [66a141e] init: Resolve both absolute and relative symlinks in
+    validate_init
+  * [042d7a3] init: Only mount /usr if the real init is systemd
+    (Closes: #763157)
+  * [d641934] debian/control: Add Breaks: systemd-sysv (<< 186)
+  * [305489e] debian/control: Conflict with linux-initramfs-tool
+    (Closes: #729800)
+  * [fd83e8b] panic: Do not return if reboot fails
+  * [c0579f5] hooks/fsck: Add hwclock, related configuration files and udev
+    rules (Closes: #763777)
+  * [a7bd088] debian/control: Add versioned Depends on util-linux to avoid
+    adjusting clock twice
+  * [6ae39eb] debian/control: Fix minimum version of util-linux
+  * [67e53ea] init: Set and export PATH before running any external commands
+  * [8ebce59] Require new klibc-utils or busybox, to get 'readlink -f' and
+    'mount -o defaults' (Closes: #762870)
+
+  [ nandhp ]
+  * [782d166] Fix handling of root filesystem with LABEL=/
+    (/dev/disk/by-label/\x2f) (Closes: #756457)
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Sat, 04 Oct 2014 17:19:10 +0100
+
+initramfs-tools (0.117) unstable; urgency=medium
+
+  [ Roger Leigh ]
+  * Generalise logic used for mounting the rootfs:
+    - The existing logic was only intended for mounting the root
+      filesystem; this logic has been refactored to support the
+      mounting of multiple filesystems
+    - Add a read_fstab_entry function to parse /etc/fstab on the
+      mounted rootfs
+    - Add resolve_device function which generalises the existing
+      support for resolving LABEL= and UUID= strings to the
+      corresponding device node
+    - Add general mount_top, mount_premount and mount_bottom functions,
+      with boot-script-specific variants for the local and nfs scripts;
+      other boot scripts should override them if needed; the local and
+      nfs scripts show how to use these to redirect to a specific
+      implementation
+    - Add general mountfs function to mount a filesystem from the
+      /etc/fstab on the mounted rootfs.  This works for both local and
+      nfs mounts; other boot scripts may override it to provide more
+      specialised functionality
+    - The local and nfs bottom scripts are run on demand if used; this
+      does not interfere with alternative boot scripts being used,
+      which will run first
+    - Canonicalise device names to match util-linux mount behaviour;
+      this ensures that "mount -a" in mountall does not try to mount
+      /usr a second time (which it will attempt if the mounted device
+      does not match the canonical device name)
+  * Mount /usr if present in the /etc/fstab on the mounted rootfs
+    (Closes: #652459)
+  * Check filesystems prior to mounting (Closes: #708000):
+    - Add empty /etc/fstab and symlink /etc/mtab to /proc/mounts;
+      not essential, but quell a number of fsck warnings
+    - Copy fsck and needed fsck helpers, plus logsave
+    - Add checkfs function, based on the initscripts checkroot
+      script
+    - local mount functions will call checkfs prior to mounting
+      the filesystem
+
+  [ Michael Prokop ]
+  * [3298dea] Bump Standards-Version to 3.9.6
+  * [a12d5ed] hooks/fsck: fall back to blkid, make sure fsck binary exists
+    + install /sbin/sulogin
+
+ -- Michael Prokop <mika@debian.org>  Thu, 25 Sep 2014 10:49:26 +0200
+
+initramfs-tools (0.116) unstable; urgency=medium
+
+  The "DebConf14" release
+
+  [ Helge Deller ]
+  * [cee3e18] get_fstype: initialize FSTYPE variable (Closes: #745731)
+
+  [ maximilian attems ]
+  * [7bc24f8] scripts/nfs: fix nfs mount check for possible init symlink
+    (Closes: #750360)
+
+  [ Aurelien Jarno ]
+  * [2e325a2] hook-functions: add support for virtio-mmio
+    (Closes: #751143)
+
+  [ Michael Prokop ]
+  * [4c0338a] Fix hidden dependency issue with btrfs and crc32c. Thanks to
+    Markus Wanner <markus@bluegap.ch> for the analysis and patch
+    (Closes: #748805)
+  * [2290173] Do not spawn shell when panic=... is used. Thanks to Lukas
+    Anzinger <l.anzinger@gmail.com> for the analysis and patch
+    (Closes: #751488)
+  * [0e914d0] Preserve file permissions if root builds the initramfs
+    images. Thanks to Harald Hoyer <harald@redhat.com> for providing the
+    patch in dracut (Closes: #633582)
+  * [39d0561] Support drop_capabilities=... boot option. Thanks to Kees
+    Cook <kees@debian.org> for the patch (Closes: #679436)
+  * [3d6fe1e] Support MODULES=dep usage on i2o hardware RAID controller.
+    Thanks to Stephen Powell <zlinuxman@wowway.com> for the patch
+    (Closes: #689558)
+  * [a5126cf] Support usage of partitioned nbd devices with MODULES=dep.
+    Thanks to Ian Campbell <ijc@hellion.org.uk> for the patch
+    (Closes: #697368)
+  * [ebeffcd] Inform user that lsinitramfs doesn't support cpio archives
+    yet. Thanks to Javier Barroso <javibarroso@gmail.com> for the initial
+    patch
+  * [ad7ab64] Bump Standards-Version to 3.9.5
+
+ -- Michael Prokop <mika@debian.org>  Sun, 31 Aug 2014 00:12:42 -0700
+
 initramfs-tools (0.115) unstable; urgency=low
 
   [ Nikolaus Schulz ]
