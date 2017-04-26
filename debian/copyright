@@ -8,8 +8,8 @@ The current ubuntu release can be found at:
 http://archive.ubuntu.com/ubuntu/pool/main/i/initramfs-tools/
 
 The Debian tree is maintained with "git" at:
-git://git.debian.org/git/kernel/initramfs-tools.git
-http://git.debian.org/?p=kernel/initramfs-tools.git;a=shortlog
+https://anonscm.debian.org/git/kernel/initramfs-tools.git
+https://anonscm.debian.org/cgit/kernel/initramfs-tools.git
 
 Authors: maximilian attems <maks@debian.org>,
 	 Jeff Bailey <jbailey@ubuntu.com>,

@@ -1,0 +1,8 @@
+lsinitramfs		usr/bin
+unmkinitramfs		usr/bin
+init			usr/share/initramfs-tools
+scripts			usr/share/initramfs-tools
+conf/initramfs.conf	etc/initramfs-tools
+hooks			usr/share/initramfs-tools
+hook-functions		usr/share/initramfs-tools
+conf/modules		usr/share/initramfs-tools

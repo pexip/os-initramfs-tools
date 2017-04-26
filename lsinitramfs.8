@@ -38,10 +38,9 @@ List content of two initramfs files in verbose mode:
 
 .SH BUGS
 .BR lsinitramfs
-cannot deal with multiple-segmented initramfs images, such as those created
-when an early (uncompressed) initramfs with system firmware is prepended to
-the regular compressed initrams, or when overlay data is appended to the
-initramfs.
+cannot deal with multiple-segmented initramfs images, except where an
+early (uncompressed) initramfs with system firmware is prepended to
+the regular compressed initramfs.
 
 .SH AUTHOR
 The initramfs-tools are written by Maximilian Attems <maks@debian.org>
@@ -51,4 +50,5 @@ and numerous others.
 .BR
 .IR initramfs-tools (8),
 .IR mkinitramfs (8),
+.IR unmkinitramfs (8),
 .IR update-initramfs (8).

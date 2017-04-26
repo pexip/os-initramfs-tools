@@ -1,58 +1,321 @@
-initramfs-tools (0.120+deb8u3) jessie; urgency=medium
+initramfs-tools (0.130) unstable; urgency=medium
 
-  * [6661d01] hook-functions: Include drivers for all keyboards when
-    MODULES=dep (Closes: #639876)
-  * [6afc19f] auto_add_modules: Include most USB host drivers (Closes: #762634)
-  * [eb35e9a] auto_add_modules: Include all bus driver modules
-  * [c9636d5] Remove code that prunes 'broken' symlinks and sometimes /etc/mtab
-    (Closes: #845581)
-  * [50b90a9] auto_add_modules: Add all I2C bus and mux drivers when
-    MODULES=most (Closes: #825687)
-  * [94d23b8] hook-functions: Stop force-loading drivers found through sysfs
-    when MODULES=dep (Closes: #792910)
+  * [5b7c092] hooks/resume: Fix validation of resume devices specified by
+    UUID etc. (Closes: #861057)
 
- -- Ben Hutchings <ben@decadent.org.uk>  Sat, 18 Feb 2017 20:43:30 +0000
+ -- Ben Hutchings <ben@decadent.org.uk>  Wed, 26 Apr 2017 02:00:05 +0100
 
-initramfs-tools (0.120+deb8u2) jessie; urgency=medium
+initramfs-tools (0.129) unstable; urgency=medium
 
-  * [7863219] hook-functions: Include drivers/nvme in block driver modules
-    (Closes: #807000)
-  * [fcef753] hook-functions: Create ORDER files even if there are no valid
-    scripts (Closes: #814965)
+  * [71cfb7f] hooks/resume: Use correct sort options to select the biggest swap
+    partition
+  * [7da8194] initramfs.conf(5): Clean up split between general and NFS
+    variables
+  * [d857e91] Support setting of RESUME in initramfs.conf or anywhere in conf.d/
+  * [786e4aa] initramfs.conf(5): Document the RESUME variable
+  * [7106c3e] hooks/resume: Check for chroot earlier
+  * [433e1ca] Allow disabling resume from disk at build time by setting
+    RESUME=none
+  * [8108a17] Support requesting automatic selection of resume device with
+    RESUME=auto
+  * [aaaa6b5] hooks/resume: Report when we might be doing something surprising
+  * [995b556] NEWS: Add entry explaining the need for RESUME=none on some
+    systems (Closes: #860403)
 
- -- Ben Hutchings <ben@decadent.org.uk>  Sun, 17 Apr 2016 18:20:09 +0100
+ -- Ben Hutchings <ben@decadent.org.uk>  Mon, 24 Apr 2017 01:06:21 +0100
 
-initramfs-tools (0.120+deb8u1) jessie; urgency=medium
+initramfs-tools (0.128) unstable; urgency=medium
+
+  * [cd352e8] debian/control: Add Breaks against older versions of busybox
+    (Closes: #855094)
+  * [e5c68ce] Include the unmkinitramfs(8) manual page in initramfs-tools-core
+  * [dc22177] scripts/local: local_device_setup should not assume devices hold
+    file systems
+  * [033c948] scripts/local: Apply a single time limit to all device discovery
+  * [f3a61b3] scripts/local: Add option for local_device_setup to return failure
+  * [2be97ee] scripts/local-premount/resume: Check for kernel resume interface
+    earlier
+  * [25837a1] scripts/local-premount/resume: Use local_device_setup for resume
+    device (Closes: #854791)
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Sat, 08 Apr 2017 21:01:30 +0100
+
+initramfs-tools (0.127) unstable; urgency=medium
+
+  * [251adae] unmkinitramfs: Don't attempt to create /main directory when
+    listing (Closes: #848423)
+  * [3714d5b] unmkinitramfs: Change mkdir/cd/cpio command sequences to exit on
+    failure
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Mon, 23 Jan 2017 03:42:36 +0000
+
+initramfs-tools (0.126) unstable; urgency=medium
 
   [ Ben Hutchings ]
-  * [c367d7d] scripts/functions: Use shell to create stamp file instead of
+  * [0b2266e] bash-completion: Fix installation of update-initramfs completion
+    script.  Thanks to Stephan Suerken <absurd@debian.org>.  (Closes: #824385)
+  * [7d875ad] Revert "hook-functions: Add detached module signatures if present"
+  * [b0a5f26] update-initramfs, hooks/resume: Use ischroot command instead of
+    our own function
+  * [385e3fc] hook-functions: Make copy_file return 0 on creating a link to an
+    existing file (Closes: #847325)
+  * [82f4bcf] Fix initramfs.conf move to ensure default values are upgraded.
+    Thanks to Andreas Beckmann <anbe@debian.org> (Closes: #822671, #825929)
+  * [d9f77c1] Remove obsolete bash-completion file on upgrade.
+    Thanks to Andreas Beckmann <anbe@debian.org>
+  * [4a10868] Remove code that prunes 'broken' symlinks and sometimes /etc/mtab
+    (Closes: #845581)
+  * [dc2323f] auto_add_modules: Add all I2C bus and mux drivers when
+    MODULES=most (Closes: #825687)
+  * [811f408] maintainer-notes.html: Update 'git buildpackage' commands to use
+    gbp too
+  * [cd33566] maintainer-notes.html: Fix post-clean option to gbp buildpackage
+  * [f54d7f0] Use debhelper compatibility level 9
+  * [5221375] debian/control: Update Standards-Version to 3.9.8; no changes
+    needed
+  * [c48108d] Revert "initramfs-tools: Install script to be invoked by
+    linux-signed postinst"
+  * [12744eb] unmkinitramfs: Rewrite command syntax
+  * [c7f241f] unmkinitramfs: Unpack early and main cpio archives in separate
+    directories
+  * [b804348] initramfs-tools: Remove obsolete linux-signed postinst script on
+    upgrade
+
+  [ Michael Prokop ]
+  * [30dfbbd] mkinitramfs: consider *.conf files only, also from
+    /lib/modprobe.d/ + don't complain about empty dirs (Closes: #829280)
+
+  [ Kevin Locke ]
+  * [f1f18a4] Create unmkinitramfs command
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Thu, 15 Dec 2016 22:43:05 +0000
+
+initramfs-tools (0.125) unstable; urgency=medium
+
+  * [74597dd] update-initramfs: Remove $USETRIGGERS variable and condition
+  * [b19d13e] initramfs-tools: Install script to be invoked by linux-signed
+     postinst
+  * [79c0204] mkinitramfs: Fix wildcard for excluding dot-files
+    (Closes: #821346)
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Sun, 17 Apr 2016 23:13:33 +0100
+
+initramfs-tools (0.124) unstable; urgency=medium
+
+  * [e05fc3e] hook-functions: Add detached module signatures if present
+    (Closes: #820037)
+  * [99dadac] hook-functions: Create ORDER files even if there are no valid
+    scripts (Closes: #814965)
+  * [57a9f2a] mkinitramfs: Exclude VCS directories when copying
+    /etc/initramfs-tools/scripts
+  * [eff1806] parse_numeric: Do not attempt to canonicalise root device name
+    (Closes: #815555)
+  * [7a820e1] auto_add_modules: Include most USB host drivers (Closes: #762634)
+  * [35751d4] auto_add_modules: Include all bus driver modules
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Sun, 17 Apr 2016 01:56:13 +0100
+
+initramfs-tools (0.123) unstable; urgency=medium
+
+  [ Ben Hutchings ]
+  * [3084929] debian/control: Remove redundant dependency on
+    klibc-utils|busybox
+  * [913a861] debian/control: Recommend the right busybox packages for the
+    target distribution
+  * [d4febbd] Remove busybox hook in favour of busybox's own (Closes: #810154)
+  * [b5303a1] Update TODO for removal of busybox hook
+  * [6cc3d85] hook-functions: Include any modular RTC drivers in the initramfs
+  * [ceff05e] hooks/fsck: Stop setting e2fsck broken_system_clock option
+    (Closes: #804071)
+  * [9c105f0] Assume blkid is always installed, and remove fallbacks
+  * [aaba4cb] hooks/fsck: Use get_fstype rather than blkid to probe filesystem
+    type
+  * [a8ed874] hooks/fsck: Always use get_fstype to probe type of root
+    filesystem (Closes: #767471)
+  * [e798629] Pass filesystem type from /etc/fstab to fsck when checking /usr
+  * [55e075c] hook-functions: Include drivers for all keyboards when
+    MODULES=dep (Closes: #639876)
+  * [704bfa5] scripts/functions: Explicitly load keyboard drivers only at
+    break=top
+  * [c5b54ae] scripts/functions: Use more sensible modprobe options at
+    break=top
+  * [39e90c8] scripts/functions: Load more USB host controllers drivers on
+    break=top
+  * [8c437f5] scripts/functions: Load HID drivers at break=top
+  * [619f2ca] scripts/functions: Connect panic shell to normal tty device
+    (Closes: #512679)
+  * [8b8b28c] hook-functions: Clean up split between dep_add_modules and
+    dep_add_modules_mount
+  * [5f34b94] hook-functions: Include modules for resume partition when
+    MODULES=dep (Closes: #588770)
+  * [31ab487] hook-functions: Stop force-loading drivers found through sysfs
+    when MODULES=dep (Closes: #792910)
+  * [07f2c88] kernel/postinst.d: Make test for update-initramfs consistent with
+    invocation (Closes: #768913)
+  * [e5476bf] copy_file: Skip duplicating symlink if it points to the target
+    file (Closes: #812404)
+  * [d0f4d06] initramfs-tools: Include empty /etc/initramfs-tools/conf.d
+    directory (Closes: #809206)
+  * [245d584] initramfs-tools.8: Update list of variables exported to hook
+    scripts
+  * [941429d] initramfs-tools.8: Add a new section for the general description
+    of scripts
+  * [3ff5d57] initramfs-tools.8: Add brief description of configuration hooks
+    and files (Closes: #807527)
+  * [c17a21a] Remove klibc hook in favour of klibc's own
+  * [ea7e02d] bash-completion: Simplify by using _get_comp_words_by_ref
+  * [9e23444] init: Use "case" rather than loop to look for "quiet" parameter
+  * [49e4a05] init: Remove fallback from devtmpfs to tmpfs
+  * [ab91306] init: Take over handling of rootdelay parameter from udev boot
+    script (Closes: #809740)
+  * [56dfe39] bash-completion: Rename our completion script so that it works
+    again
+  * [ac6d31f] mkinitramfs: Delete or report temporary files on failure
+    (Closes: #814345)
+  * [c8c932d] Move initramfs.conf around in maintainer scripts to avoid it
+    being 'obsolete' (Closes: #813229)
+  * [138af73] hook-functions: Dereference links when looking up block device
+    number
+
+  [ Andy Whitcroft ]
+  * [7774fa3] Don't display "Loading, please wait..." message when 'quiet' is
+    in /proc/cmdline.
+  * [c4ea209] Mount /dev with the default tmpfs size rather than sourcing
+    udev.conf.
+  * [b418ad4] Sync the mount options for /run from /lib/init/fstab
+    (LP: #1152744)
+  * [c44df0c] init: Mount /dev with "nosuid". Thanks to Daniel (LP: #1450960)
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Thu, 11 Feb 2016 02:13:23 +0000
+
+initramfs-tools (0.122) unstable; urgency=medium
+
+  * [4fa3fe4] init: Validate the real init after devtmpfs is mounted under the
+    real root (Closes: #811479)
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Tue, 19 Jan 2016 22:39:40 +0000
+
+initramfs-tools (0.121) unstable; urgency=medium
+
+  [ Salvatore Bonaccorso ]
+  * [19422ac] debian/NEWS: Fix typo in reference to initramfs.conf configuration
+    file
+
+  [ Ben Hutchings ]
+  * [bf445db] Restore automatic selection between busybox and klibc by default
+    (Closes: #809204)
+  * [4251397] init: Always mount /usr before looking for the real init
+  * [c6d067c] init: Remove use of switch_root
+  * [3c8b67c] init: Use run-init -n option to validate real init
+    (Closes: #810965)
+  * [40f2132] scripts/functions: Fix fsck display options (Closes: #781239)
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Mon, 18 Jan 2016 17:43:22 +0000
+
+initramfs-tools (0.121~rc2) experimental; urgency=medium
+
+  * Upload to experimental, not unstable
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Tue, 22 Dec 2015 22:07:42 +0000
+
+initramfs-tools (0.121~rc1) unstable; urgency=medium
+
+  [ Ben Hutchings ]
+  * [da2159f] Add .gitignore files to exclude generated and backup files
+  * [8ad7317] bash-completion: Install using dh_bash-completion
+  * [31d21d6] Rename lintian override file so dh_lintian installs it
+    automatically
+  * [9d45599] debian/control: Update and shorten description
+  * [2bf8c27] Split initramfs-tools binary packages into core and automation
+    hooks
+  * [6562e1b] debian/control,debian/copyright: Use canonical HTTP-S URLs for
+    Alioth git repos
+  * [76dab5a] hook-functions: Include soft-dependencies of all kernel modules
+    (Closes: #588452)
+  * [7285ffb] hooks/busybox: Fail if busybox is wanted but not found
+    (Closes: #785564)
+  * [852b9ab] scripts/functions: Use shell to create stamp file instead of
     'touch' (Closes: #783291)
-  * [d22b95b] update-initramfs: Run 'sync' after writing the initramfs
+  * [9aea31d] sripts/local: Remove obsolete hint about ATA device renaming
+  * [e0c8d03] hook-functions: Always use /proc/mounts, avoiding mangling of
+    /dev/root (Closes: #766920)
+  * [728f534] hook-functions: Fold sys_walk_modalias into sys_walk_mod_add
+  * [d122ab6] hook-functions: Split block device sysfs lookup into a separate
+    function
+  * [aff5209] hook-functions: Remove loop-aes support
+  * [3cb744c] hook-functions: Rewrite block device sysfs lookup to be generic
+    (Closes: #747871, #785147, #807004, #807256)
+  * [8ac52dc] hook-functions: Include modules for all components of a
+    multi-disk device (Closes: #620814)
+  * [c69313d] parse_numeric: Tighten check for whether 'root' parameter is a
+    number (Closes: #697017)
+  * [8062189] parse_numeric: Add support for 20-bit minor numbers in 'root'
+    parameter
+  * [88f98b5] parse_numeric: Replace numeric root with canonical device name
+  * [28e5a0a] update-initramfs: Use linux-version command to sort versions
+    (Closes: #770394, #795837)
+  * [4b4e578] lsinitramfs.8: Update the BUGS section to note fix for #717805
+    (Closes: #790095)
+  * [fa82bf1] hooks/fsck: Stop copying sulogin, which is no longer used
+  * [95beada] Only run fsck if enabled in /etc/fstab (pass != 0)
+    (Closes: #797361)
+  * [371221b] hooks/fsck: Use 'command' to find fsck.<type> (Closes: #784234)
+  * [e352b94] scripts/functions: Use blkid to resolve LABEL= and UUID= block
+    device IDs
+  * [7469eee] scripts/functions: Handle PARTLABEL= and PARTUUID= block device
+    IDs using blkid (Closes: #801154)
+  * [fe30453] hook-functions: Include drivers/nvme in block driver modules
+    (Closes: #807000)
+  * [fa1985b] update-initramfs: Run 'sync' after writing the initramfs
     (Closes: #783620)
-  * [c22cefe] hook-functions: Add support for nvme devices with MODULES=dep
-    (Closes: #785147)
-  * [e0b23a1] hook-functions: Add support for LVM/LUKS on mmcblk and nvme
-    devices with MODULES=dep (Closes: #747871, #810808)
-  * [0e905aa] scripts/functions: Fix fsck display options (Closes: #781239)
+  * [6a40a89] hook-functions: Introduce copy_file function
+  * [a7fc630] Use copy_file to copy config files and firmware, instead of
+    copy_exec
+  * [52ae50c] hook-functions: Use copy_file to install modules
+  * [b215c18] Support multiple break points using a comma delimiter
+    (Closes: #795832)
+  * [b2dfbeb] Set emacs local variables to implement our shell coding style
+  * [b1dc049] hook-functions: Preserve symlinks when copying files
+    (Closes: #799443)
+  * [319b141] hooks/fsck: Simplify by letting copy_exec handle symlinks
+  * [143b9ef] maintainer-notes.html: Update changelog command lines to use
+    'gbp dch'
+  * [f01cdd4] debian/control: Ensure lockstep upgrade of initramfs-tools and
+    -core
+  * [88f7bb6] debian/TODO: Update for released and pending changes
+  * [d136f22] scripts/local: Remove residual support for separate /etc
+    filesystem
+  * [14913b2] scripts/local: Name parameters to local_device_setup
+  * [3080087] Defer resolving block device IDs to local_device_setup
+  * [3574b56] scripts/functions: Stop resolving symlinks in resolve_device
+    (Closes: #791754)
 
   [ Laurent Bigonville ]
-  * [3c4b38a] Support fsck.mode= and fsck.repair= parameters as known by
+  * [27405fc] Support fsck.mode= and fsck.repair= parameters as known by
     systemd-fsck (Closes: #783410, #792557)
-  * [dcb0f0c] Run new panic scripts just before dropping to a shell
+  * [8a2f298] Run new panic scripts just before dropping to a shell
     (Closes: #602331)
 
   [ Boris Egorov ]
-  * [2c82cf4] mkinitramfs: fix bashism in script (Closes: #633582)
-
-  [ Andy Whitcroft ]
-  * [97b664e] When adding i8042 also add psmouse as some keyboards are behind
-    the mouse (Closes: #795839)
+  * [c14d661] mkinitramfs: fix bashism in script (Closes: #633582)
 
   [ Salvatore Bonaccorso ]
-  * [71e5b62] scripts/nfs: Check return value from nfs_mount_root_impl
+  * [f78c9a9] scripts/nfs: Check return value from nfs_mount_root_impl
     (Closes: #782641)
 
- -- Ben Hutchings <ben@decadent.org.uk>  Sat, 20 Feb 2016 15:48:17 +0000
+  [ Roger Shimizu ]
+  * [50aa8e2] advance the timing of insmod netconsole
+  * [3acddcc] redirect debug info to netconsole (Closes: #793786)
+
+  [ Andy Whitcroft ]
+  * [4ba741b] Add 2>&1 to the run-init line (Closes: #795831)
+  * [1f5c193] When adding i8042 also add psmouse as some keyboards are behind
+    the mouse (Closes: #795839)
+
+  [ Roger Leigh ]
+  * [6a8d18b] init: Always migrate /run to the rootfs (Closes: #696632)
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Tue, 22 Dec 2015 21:56:40 +0000
 
 initramfs-tools (0.120) unstable; urgency=medium
 

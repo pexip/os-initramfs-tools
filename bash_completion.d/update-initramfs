@@ -4,10 +4,7 @@ _update_initramfs()
 {
 	local cur prev valid_options
 
-	# TODO: this can be "_get_comp_words_by_ref cur prev" once
-	# bash-completion >= 1.2 is available, see #537139
-	cur=$(_get_cword)
-	prev=${COMP_WORDS[COMP_CWORD-1]}
+	_get_comp_words_by_ref cur prev
 
 	# The only option that takes an argument is -k
 	if [[ "$prev" == '-k' ]]; then

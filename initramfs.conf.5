@@ -68,13 +68,23 @@ corresponding userspace utility is not present.
 Set the umask value of the generated initramfs file.
 Useful to not disclose eventual keys.
 
-.SH NFS VARIABLES
 .TP
 \fB BOOT
 Allows one to use an nfs drive as the root of the drive.
 The default is to boot from \fIlocal\fP media (hard drive, USB stick).
 Set to \fInfs\fP for an NFS root share.
 
+.SH VARIABLES FOR LOCAL BOOT
+.TP
+\fB RESUME
+Specifies the device used for suspend-to-disk (hibernation), which the
+initramfs code should attempt to resume from.  If this is not defined
+or is set to \fIauto\fP,
+.B mkinitramfs
+will automatically select the largest available swap partition.
+Set it to \fInone\fP to disable resume from disk.
+
+.SH VARIABLES FOR NFS BOOT
 .TP
 \fB DEVICE
 Specifies the network interface, like eth0.

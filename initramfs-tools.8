@@ -110,7 +110,8 @@ Use for example "debug=vc".
 spawns a shell in the initramfs image at the chosen phase
 (top, modules, premount, mount, mountroot, bottom, init)
 before actually executing the corresponding scripts
-(see the "Boot scripts" section) or action.
+(see the "Boot scripts" section) or action.  Multiple
+phases may be specified, delimited by commas.
 The default, if no phase is specified, is "premount".
 Beware that if both "panic" and "break" are present,
 initramfs will not spawn any shells but reboot instead.
@@ -124,10 +125,14 @@ loads netconsole linux modules with the chosen args.
 loads generic IDE/ATA chipset support on boot.
 
 
-.SH HOOK SCRIPTS
+.SH SCRIPTS
 
 Valid boot and hook scripts names consist solely of alphabetics, numerics,
 dashes and underscores. Other scripts are discarded.
+
+.SS Configuration hook scripts
+These are used to override the user configuration where necessary, for
+example to force use of busybox instead of klibc utilities.
 
 .SS Hook scripts
 These are used when an initramfs image is created and not included in the
@@ -141,6 +146,20 @@ kernel boot in the early user-space before the root partition has been
 mounted.
 
 
+.SH CONFIGURATION HOOK SCRIPTS
+
+Configuration hook scripts can be found in
+/usr/share/initramfs-tools/conf-hooks.d.  They are sourced by
+mkinitramfs after the configuration files in /etc and before running
+any hook scripts.  They can override any of the variables documented
+in \fIinitramfs.conf\fR(5), but this should be done only if absolutely
+necessary.  For example, if a package's boot script requires commands
+not provided by klibc-utils, it should also install a configuration
+hook that sets \fBBUSYBOX=y\fR.
+
+
+.SH HOOK SCRIPTS
+
 Hooks can be found in two places: /usr/share/initramfs-tools/hooks and
 /etc/initramfs-tools/hooks. They are executed during generation of the
 initramfs-image and are responsible for including all the necessary components
@@ -152,6 +171,11 @@ values and executed. Then all scripts in /etc/initramfs-tools are ordered
 according to \fBtheir\fR PREREQ values and executed. This mean that currently
 there is no possibility to have a local script (/etc/initramfs-tools) get
 executed before one from the package (/usr/share/initramfs-tools).
+
+If a hook script requires configuration beyond the exported variables
+listed below, it should read a private configuration file that is
+separate from the /etc/initramfs-tools directory.  It \fImust not\fR
+read initramfs-tools configuration files directly.
 
 .SS Header
 In order to support prereqs, each script should begin with the following lines:
@@ -279,13 +303,12 @@ allows arch specific hook additions.
 \fB\fI verbose
 corresponds to the verbosity of the update-initramfs run.
 .TP
-\fB\fI KEYMAP
-sets if a keymap needs to be added to initramfs.
+\fB\fI BUSYBOX, KEYMAP, MODULES
+are as described in \fIinitramfs.conf\fR(5).
 .TP
-\fB\fI MODULES
-specifies which kind of modules should land on initramfs.
-This setting shouldn't be overridden by hook script, but can guide them
-on how much they need to include on initramfs.
+\fB\fI BUSYBOXDIR
+is the directory where busybox utilities should be installed from, or
+empty if busybox is not being used.
 
 
 .SH BOOT SCRIPTS
@@ -536,6 +559,8 @@ Otherwise keep it alone.
 .TP
 \fB\fI ROOTDELAY, ROOTFLAGS, ROOTFSTYPE, IP
 corresponds to the rootdelay, rootflags, rootfstype or ip boot option.
+Use of ROOTDELAY is deprecated; you should implement a \fIlocal-block\fR
+boot script rather than delaying or polling.
 .TP
 \fB\fI DPKG_ARCH
 allows arch specific boot actions.
