@@ -8,7 +8,7 @@ Build-Depends: debhelper (>= 7.0)
 Standards-Version: 3.9.6
 Vcs-Browser: http://git.debian.org/?p=kernel/initramfs-tools.git
 Vcs-Git: git://git.debian.org/git/kernel/initramfs-tools.git
-XS-Pexip-Upstream: http://ftp.debian.org/debian/ jessie
+XS-Pexip-Upstream: http://ftp.debian.org/debian/ stretch
 
 Package: initramfs-tools
 Architecture: all
