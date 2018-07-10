@@ -1,4 +1,21 @@
 #!/usr/bin/make -f
 
 %:
-	dh $@
+	dh $@ --with bash-completion
+
+# On Debian we can use either busybox or busybox-static, but on Ubuntu
+# and derivatives only busybox-initramfs will work.
+BUSYBOX_PACKAGES := $(shell if dpkg-vendor --derives-from ubuntu; then echo busybox-initramfs; else echo busybox busybox-static; fi)
+BUSYBOX_MIN_VERSION := 1:1.22.0-17~
+
+override_dh_gencontrol:
+	echo >> debian/initramfs-tools-core.substvars "busybox:Breaks=$(wordlist 2,100,$(BUSYBOX_PACKAGES:%=, % (<< $(BUSYBOX_MIN_VERSION))))"
+	echo >> debian/initramfs-tools-core.substvars "busybox:Recommends=$(wordlist 2,100,$(BUSYBOX_PACKAGES:%=| % (>= $(BUSYBOX_MIN_VERSION))))"
+	dh_gencontrol
+
+override_dh_install:
+	sed -e 's,@BUSYBOX_PACKAGES@,$(wordlist 2,100,$(BUSYBOX_PACKAGES:%=or %)),' \
+	    -e 's/@BUSYBOX_MIN_VERSION@/$(BUSYBOX_MIN_VERSION)/' \
+		mkinitramfs > debian/initramfs-tools-core/usr/sbin/mkinitramfs
+	chmod 755 debian/initramfs-tools-core/usr/sbin/mkinitramfs
+	dh_install

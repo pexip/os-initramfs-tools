@@ -1,0 +1,2 @@
+rm_conffile /etc/bash_completion.d/initramfs-tools 0.126~
+rm_conffile /etc/kernel/signed_postinst.d/initramfs-tools 0.126~

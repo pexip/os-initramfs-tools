@@ -1,0 +1,54 @@
+.TH UNMKINITRAMFS 8  "2016/02/09" "Linux" "unmkinitramfs manual"
+
+.SH NAME
+unmkinitramfs \- extract content from an initramfs image
+
+.SH SYNOPSIS
+.B unmkinitramfs
+.RI [ options ] " <initramfsfile> <directory>"
+.br
+
+.SH DESCRIPTION
+The
+.B unmkinitramfs
+command extracts the content of a given initramfs image using
+.BR cpio .
+If the image contains multiple segments, each are passed to
+.B cpio
+in order.
+
+.SH OPTIONS
+
+.TP
+.B -h
+Display usage information and exit.
+
+.TP
+.B -v
+Display verbose messages about extraction.
+
+
+.SH USAGE EXAMPLES
+
+Extract initramfs content of current running kernel:
+
+.PP
+.B unmkinitramfs /boot/initrd.img-$(uname -r) initramfs/
+
+
+.SH BUGS
+.BR unmkinitramfs
+cannot deal with multiple-segmented initramfs images, except where an
+early (uncompressed) initramfs with system firmware is prepended to
+the regular compressed initramfs.
+
+.SH AUTHOR
+The initramfs-tools are written by Maximilian Attems <maks@debian.org>
+and numerous others.
+
+.SH SEE ALSO
+.BR
+.IR initramfs-tools (8),
+.IR lsinitramfs (8),
+.IR mkinitramfs (8),
+.IR update-initramfs (8).
