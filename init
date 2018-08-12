@@ -207,10 +207,6 @@ maybe_break modules
 load_modules
 [ "$quiet" != "y" ] && log_end_msg
 
-if [ "$ROOTDELAY" ]; then
-	sleep $ROOTDELAY
-fi
-
 maybe_break premount
 [ "$quiet" != "y" ] && log_begin_msg "Running /scripts/init-premount"
 run_scripts /scripts/init-premount
