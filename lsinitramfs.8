@@ -1,12 +1,14 @@
-.TH LSINITRAMFS 8  "2010/06/16" "Linux" "lsinitramfs manual"
+.TH LSINITRAMFS 8  "2015/12/09" "initramfs\-tools" "System Administration"
 
 .SH NAME
 lsinitramfs \- list content of an initramfs image
 
 .SH SYNOPSIS
 .B lsinitramfs
-.RI [ options ] " <initramfsfile> " [ <initramfsfile> ]
+.RB [ -l ]
+.IR initramfs-file ...
 .br
+.BR lsinitramfs " " -h
 
 .SH DESCRIPTION
 The
@@ -48,7 +50,7 @@ and numerous others.
 
 .SH SEE ALSO
 .BR
-.IR initramfs-tools (8),
+.IR initramfs-tools (7),
 .IR mkinitramfs (8),
 .IR unmkinitramfs (8),
 .IR update-initramfs (8).

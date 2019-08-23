@@ -1,12 +1,14 @@
-.TH UNMKINITRAMFS 8  "2016/02/09" "Linux" "unmkinitramfs manual"
+.TH UNMKINITRAMFS 8  "2016/12/15" "initramfs\-tools" "System Administration"
 
 .SH NAME
 unmkinitramfs \- extract content from an initramfs image
 
 .SH SYNOPSIS
 .B unmkinitramfs
-.RI [ options ] " <initramfsfile> <directory>"
+.RB [ -v ]
+.IR initramfs-file " " directory
 .br
+.BR unmkinitramfs " " -h
 
 .SH DESCRIPTION
 The
@@ -48,7 +50,7 @@ and numerous others.
 
 .SH SEE ALSO
 .BR
-.IR initramfs-tools (8),
+.IR initramfs-tools (7),
 .IR lsinitramfs (8),
 .IR mkinitramfs (8),
 .IR update-initramfs (8).

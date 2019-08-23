@@ -6,7 +6,7 @@
 # The # package that owns it may opt to install it in an appropriate
 # location under "/usr/share/initramfs-tools/scripts/".
 #
-# see initramfs-tools(8) for more details.
+# see initramfs-tools(7) for more details.
 
 #
 # List the soft prerequisites here.  This is a space separated list of

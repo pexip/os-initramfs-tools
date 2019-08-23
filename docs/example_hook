@@ -13,7 +13,7 @@
 #
 #  DESTDIR -- The staging directory where we are building the image.
 #
-# see initramfs-tools(8)
+# see initramfs-tools(7)
 
 #
 # List the soft prerequisites here.  This is a space separated list of
