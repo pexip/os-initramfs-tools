@@ -8,7 +8,7 @@ Build-Depends: debhelper (>= 9), bash-completion
 Standards-Version: 3.9.8
 Vcs-Browser: https://anonscm.debian.org/cgit/kernel/initramfs-tools.git
 Vcs-Git: https://anonscm.debian.org/git/kernel/initramfs-tools.git
-XS-Pexip-Upstream: http://ftp.debian.org/debian/ stretch
+XS-Pexip-Upstream: http://ftp.debian.org/debian/ buster
 
 Package: initramfs-tools
 Architecture: all
