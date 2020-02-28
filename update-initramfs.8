@@ -1,18 +1,18 @@
-.TH UPDATE-INITRAMFS 8  "2008/12/19" "Linux" "update\-initramfs manual"
+.TH UPDATE-INITRAMFS 8  "2014/10/16" "initramfs\-tools" "System Administration"
 
 .SH NAME
 update\-initramfs \- generate an initramfs image
 
 .SH SYNOPSIS
 .B update\-initramfs
-.RB  \-c | \-d | \-u
+.RB { \-c | \-d | \-u }
 .RB [ \-k
 .IR version ]
-.RB [ \-t ]
 .RB [ \-v ]
 .RB [ \-b
 .IR directory ]
-.RB [ \-h ]
+.br
+.BR update\-initramfs " " \-h
 .SH DESCRIPTION
 The
 .B update\-initramfs
@@ -28,7 +28,7 @@ happens in this early userspace.
 
 .SH OPTIONS
 .TP
-\fB \-k \fI version
+\fB\-k \fI version
 Set the specific kernel version for whom the initramfs will be generated.
 For example the output of uname \-r for your currently running kernel.
 This argument is optional for update. The default is the latest kernel version.
@@ -37,37 +37,32 @@ The use of "all" for the
 .I version
 string specifies
 .B update\-initramfs
-to execute the chosen action for all kernel versions, that are already known
-to
-.B update\-initramfs.
+to execute the chosen action for all installed kernel versions that already
+have an initramfs.
 
 .TP
-\fB \-c
+\fB\-c
 This mode creates a new initramfs.
 
 .TP
-\fB \-u
+\fB\-u
 This mode updates an existing initramfs.
 
 .TP
-\fB \-d
+\fB\-d
 This mode removes an existing initramfs.
 
 .TP
-\fB \-t
-Allows one to take over an custom initramfs with a newer one.
-
-.TP
-\fB \-v
+\fB\-v
 This option increases the amount of information you are given during
 the chosen action.
 
 .TP
-\fB \-b \fI directory
+\fB\-b \fI directory
 Set an different bootdir for the image creation.
 
 .TP
-\fB \-h
+\fB\-h\fR, \fB--help\fR
 Print a short help page describing the available options in
 .B update\-initramfs.
 
@@ -94,6 +89,6 @@ Jeff Bailey <jbailey@raspberryginger.com> and numerous others.
 .SH SEE ALSO
 .BR
 .IR initramfs.conf (5),
-.IR initramfs-tools (8),
+.IR initramfs-tools (7),
 .IR mkinitramfs (8),
 .IR lsinitramfs (8).

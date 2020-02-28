@@ -1,4 +1,4 @@
-.TH INITRAMFS-TOOLS 8  "2010/09/23" "Linux" "mkinitramfs script overview"
+.TH INITRAMFS-TOOLS 7  "2018/07/18" "initramfs\-tools" "Linux Programmer's Manual"
 
 .SH NAME
 initramfs-tools \- an introduction to writing scripts for mkinitramfs
@@ -22,6 +22,18 @@ mount the partition with that UUID as the root filesystem.
 .TP
 \fB\fI init= "<path to real init>"
 the binary to hand over execution to on the root fs after the initramfs scripts are done.
+
+.TP
+\fB\fI initramfs.clear
+clear screen at the beginning
+
+.TP
+\fB\fI initramfs.runsize
+The size of the \fI/run\fP tmpfs mount point in bytes (suffixes are supported)
+or as percentage of your physical RAM. This parameter is used as the value of
+the size mount option to tmpfs. See
+\fBhttps://www.kernel.org/doc/Documentation/filesystems/tmpfs.txt\fR for
+details. The default is 10%.
 
 .TP
 \fB\fI root= "<path to blockdevice>"
@@ -587,6 +599,28 @@ is the path where root gets mounted usually /root.
 .TP
 \fB\fI debug
 indicates that a debug log is captured for further investigation.
+
+
+.SH UPDATING THE INITRAMFS FROM ANOTHER PACKAGE
+Package maintainer scripts should not run \fBupdate-initramfs\fR
+directly.  A package that installs hooks for initramfs-tools should
+include a triggers file containing:
+.RS
+.nf
+activate\-noawait update\-initramfs
+.fi
+.RE
+
+Kernel packages must call the kernel hooks as documented in the
+Debian Kernel Handbook.
+
+A package that requires an initramfs to function, but is not a kernel
+package, should include a triggers file containing:
+.RS
+.nf
+activate\-await update\-initramfs
+.fi
+.RE
 
 
 .SH KERNEL HOOKS

@@ -1,12 +1,37 @@
 initramfs-tools
 ===============
 
-This package is a work in progress towards the replacement of the initrd
-system with an initramfs system.
+The Linux kernel may boot using an "initramfs", an archive of files
+that it unpacks into an in-memory file system at the beginning of the
+boot process.  This archive must contain its own init program which
+the kernel will run as the first user process.  In a Debian system,
+the initramfs is responsible for:
 
-The goals include using klibc for all earlyspace tools, an integrated udev
-and an integrated hotplug.
+* Loading essential driver modules
+* Setting up a network connection, if required
+* Setting up layered storage devices, if required
+* Resuming from hibernation (suspend-to-disk), if possible
+* Checking and mounting the root and /usr file systems
+* Handing over to the main init system
 
-See the TODO file for a current status.
+initramfs-tools is designed to be extensible, and many other packages
+provide these and additional features in the initramfs.
 
-Jeff Bailey - 2005-04-24
+On x86 systems, the initramfs can also contain CPU microcode updates
+that the kernel will apply at a very early stage.  These are provided
+by the (non-free) intel-microcode and amd64-microcode packages.
+
+Debian's official kernel packages require the use of an initramfs,
+since drivers and filesystem code are built as modules that need to be
+loaded before the file systems can be mounted.  Custom kernel packages
+that have this code built-in may still need an initramfs to set up
+layered storage devices or to provide microcode updates.
+
+If initramfs-tools is installed, it will generate an initramfs
+automatically whenever a kernel is installed or upgraded (and remove
+it when the kernel is removed).  If only initramfs-tools-core is
+installed, you can run mkinitramfs to generate an initramfs.
+
+The initramfs-tools(7) manual page documents the supported parameters
+and how to extend initramfs-tools.  There are additional manual pages
+for the various commands and configuration files.

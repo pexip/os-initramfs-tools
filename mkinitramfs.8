@@ -1,29 +1,16 @@
-.TH MKINITRAMFS 8  "2010/04/07" "Linux" "mkinitramfs manual"
+.TH MKINITRAMFS 8  "2018/07/18" "initramfs\-tools" "System Administration"
 
 .SH NAME
 mkinitramfs \- low-level tool for generating an initramfs image
 
 .SH SYNOPSIS
 .B mkinitramfs
-.RB [ \-c
-.IR compress ]
-.RB [ \-d
-.IR confdir ]
-.RB [ \-k ]
-.RB \-o
+.RI [ option ]...
+.B \-o
 .IR outfile
-.RB [ \-r
-.IR root ]
-.RB [ \-v ]
 .RI [ version ]
-
-.B mkinitramfs
-.RB [ \-\-supported-host-version=
-.IR hversion ]
-
-.B mkinitramfs
-.RB [ \-\-supported-target-version=
-.IR tversion ]
+.br
+.BR mkinitramfs " " -h
 
 .SH DESCRIPTION
 The
@@ -47,50 +34,44 @@ happens in this early userspace.
 
 .SH OPTIONS
 .TP
-\fB \-c \fI compress
+\fB\-c \fI compress
 Override the
 .B COMPRESS
 setting in
 .IR initramfs.conf .
 
 .TP
-\fB \-d \fI confdir
+\fB\-d \fI confdir
 Set an alternate configuration directory.
 
 .TP
-\fB \-k
+\fB\-k
 Keep the temporary directory used to make the image.
 
 .TP
-\fB \-o \fI outfile
+\fB\-o \fI outfile
 Write the image to
 .IR outfile .
 
 .TP
-\fB \-r \fI root
+\fB\-r \fI root
 Override the
 .B ROOT
 setting in
 .IR initramfs.conf .
 
 .TP
-\fB \-v
+\fB\-v
 Set the verbose mode output.
 
 .TP
-\fI version
+\fIversion
 Set the kernel version of the initramfs image
 (defaults to the running kernel).
 
 .TP
-\fB\-\-supported-host-version=\fIhversion
-This option queries if mkinitramfs can create ramdisks on a running kernel of version
-.IR hversion .
-
-.TP
-\fB\-\-supported-target-version=\fItversion
-This option queries if mkinitramfs can create ramdisks for kernel version
-.IR tversion .
+\fB\-h\fR, \fB\-\-help\fR
+Display usage information and exit.
 
 .SH ENVIRONMENT
 .B mkinitramfs
@@ -104,6 +85,12 @@ filesystem which allows the execution of files stored there, i.e.
 should not be mounted with the
 .B noexec
 mount option.
+
+If
+.B SOURCE_DATE_EPOCH
+is set,
+.B mkinitramfs
+attempts to generate a reproducible initramfs image.
 
 .SH FILES
 .TP
@@ -153,7 +140,7 @@ Jeff Bailey <jbailey@raspberryginger.com> and numerous others.
 .SH SEE ALSO
 .BR
 .IR initramfs.conf (5),
-.IR initramfs-tools (8),
+.IR initramfs-tools (7),
 .IR update-initramfs (8),
 .IR lsinitramfs (8),
 .IR unmkinitramfs (8).

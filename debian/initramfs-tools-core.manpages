@@ -2,4 +2,4 @@ lsinitramfs.8
 mkinitramfs.8
 unmkinitramfs.8
 initramfs.conf.5
-initramfs-tools.8
+initramfs-tools.7

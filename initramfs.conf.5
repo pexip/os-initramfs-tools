@@ -1,4 +1,4 @@
-.TH INITRAMFS.CONF 5  "2010/11/22" "Linux" "initramfs.conf manual"
+.TH INITRAMFS.CONF 5  "2018/07/18" "initramfs\-tools" "File Formats Manual"
 
 .SH NAME
 initramfs.conf \- configuration file for mkinitramfs
@@ -74,6 +74,15 @@ Allows one to use an nfs drive as the root of the drive.
 The default is to boot from \fIlocal\fP media (hard drive, USB stick).
 Set to \fInfs\fP for an NFS root share.
 
+.TP
+\fB RUNSIZE
+The size of the \fI/run\fP tmpfs mount point in bytes (suffixes are supported)
+or as percentage of your physical RAM. This parameter is used as the value of
+the size mount option to tmpfs. See
+\fBhttps://www.kernel.org/doc/Documentation/filesystems/tmpfs.txt\fR for
+details. Can be overridden by an optional \fBinitramfs.runsize=\fR bootarg.
+The default is 10%.
+
 .SH VARIABLES FOR LOCAL BOOT
 .TP
 \fB RESUME
@@ -87,7 +96,8 @@ Set it to \fInone\fP to disable resume from disk.
 .SH VARIABLES FOR NFS BOOT
 .TP
 \fB DEVICE
-Specifies the network interface, like eth0.
+Specifies the default network interface to use, like eth0.  The \fIip\fP or
+\fIBOOTIF\fP bootargs may override this.
 
 .TP
 \fB ROOT
@@ -110,6 +120,6 @@ Loosely based on mkinitrd.conf by Herbert Xu.
 
 .SH SEE ALSO
 .BR
-.IR initramfs-tools (8),
+.IR initramfs-tools (7),
 .IR mkinitramfs (8),
 .IR update-initramfs (8).
