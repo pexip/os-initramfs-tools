@@ -20,6 +20,9 @@ override_dh_install:
 	chmod 755 debian/initramfs-tools-core/usr/sbin/mkinitramfs
 	dh_install
 
+override_dh_installinitramfs:
+	@:
+
 override_dh_auto_test:
 ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
 	shellcheck -e SC1090,SC1091 -s dash hook-functions $$(find hooks scripts -type f) $$({ find . -maxdepth 1 -type f -executable; find debian -maxdepth 1 -type f; find docs kernel -type f; } | xargs grep -l '^#!/bin/sh')

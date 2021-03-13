@@ -24,7 +24,7 @@ case "$DPKG_ARCH" in
 powerpc|ppc64)
 
 	# Only G5 Mac machines need to load
-	# therm_pm72 or one of the windfarm_pm* modules.
+	# windfarm_core or one of the windfarm_pm* modules.
 
 	[ -r /proc/cpuinfo ] || exit 0
 
@@ -32,8 +32,11 @@ powerpc|ppc64)
 	MODEL="${MODEL##*: }"
 
 	case "$MODEL" in
-	  RackMac3,1|PowerMac7,2|PowerMac7,3)
-	    force_load therm_pm72
+	  RackMac3,1)
+	    force_load windfarm_rm31
+	    ;;
+	  PowerMac7,2|PowerMac7,3)
+	    force_load windfarm_pm72
 	    ;;
 	  PowerMac8,1|PowerMac8,2)
 	    force_load windfarm_pm81

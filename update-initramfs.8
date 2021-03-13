@@ -35,10 +35,11 @@ This argument is optional for update. The default is the latest kernel version.
 
 The use of "all" for the
 .I version
-string specifies
+string specifies that
 .B update\-initramfs
-to execute the chosen action for all installed kernel versions that already
-have an initramfs.
+should operate on all installed kernel versions (with \fB\-c\fR), or
+on all installed kernel versions that already have an initramfs
+(with \fB\-d\fR or \fB\-u\fR).
 
 .TP
 \fB\-c
@@ -50,7 +51,7 @@ This mode updates an existing initramfs.
 
 .TP
 \fB\-d
-This mode removes an existing initramfs.
+This mode deletes an existing initramfs.
 
 .TP
 \fB\-v

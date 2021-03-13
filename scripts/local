@@ -8,14 +8,6 @@ local_top()
 		[ "$quiet" != "y" ] && log_end_msg
 	fi
 	local_top_used=yes
-
-	# Start time for measuring elapsed time in local_device_setup
-	if [ -z "${local_top_time}" ]; then
-		local_top_time="$(cat /proc/uptime)"
-		local_top_time="${local_top_time%%[. ]*}"
-		local_top_time=$((local_top_time + 1)) # round up
-		export local_top_time
-	fi
 }
 
 local_block()
@@ -44,7 +36,6 @@ local_bottom()
 	fi
 	local_premount_used=no
 	local_top_used=no
-	unset local_top_time
 }
 
 # $1=device ID to mount
@@ -94,9 +85,7 @@ local_device_setup()
 
 		while true; do
 			sleep 1
-			time_elapsed="$(cat /proc/uptime)"
-			time_elapsed="${time_elapsed%%[. ]*}"
-			time_elapsed=$((time_elapsed - local_top_time))
+			time_elapsed="$(time_elapsed)"
 
 			local_block "${dev_id}"
 
@@ -113,7 +102,7 @@ local_device_setup()
 				else
 					break
 				fi
-				if [ ${count} -ge ${time_elapsed} ]; then
+				if [ "${count}" -ge "${time_elapsed}" ]; then
 					break;
 				fi
 				/scripts/local-block/mdadm "${dev_id}"
@@ -125,7 +114,7 @@ local_device_setup()
 				log_end_msg 0
 				break
 			fi
-			if [ ${time_elapsed} -ge "${slumber}" ]; then
+			if [ "${time_elapsed}" -ge "${slumber}" ]; then
 				log_end_msg 1 || true
 				break
 			fi

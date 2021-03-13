@@ -267,14 +267,14 @@ copy_modules_dir kernel/drivers/ata
 .RE
 
 .SS Including binaries
-If you need to copy binaries to the initramfs module, a command like this
-should be used:
+If you need to copy an executable or shared library to the initramfs
+module, use a command like this:
 .PP
 .RS
 copy_exec /sbin/mdadm /sbin
 .RE
 
-mkinitramfs will automatically detect which libraries the executable depends on
+mkinitramfs will automatically detect which libraries it depends on
 and copy them to the initramfs. This means that most executables, unless
 compiled with klibc, will automatically include glibc in the image which will
 increase its size by several hundred kilobytes.
@@ -516,7 +516,7 @@ if [ ! \-x "/sbin/frobnicate" ]; then
 fi
 
 force_load frobnicator interval=10
-cp /sbin/frobnicate "${DESTDIR}/sbin"
+copy_exec /sbin/frobnicate /sbin
 exit 0
 .fi
 .RE
