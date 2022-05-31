@@ -31,6 +31,8 @@ xcpio()
 
 	if gzip -t "$archive" >/dev/null 2>&1 ; then
 		gzip -c -d "$archive"
+	elif zstd -q -c -t "$archive" >/dev/null 2>&1 ; then
+		zstd -q -c -d "$archive"
 	elif xzcat -t "$archive" >/dev/null 2>&1 ; then
 		xzcat "$archive"
 	elif lz4cat -t < "$archive" >/dev/null 2>&1 ; then

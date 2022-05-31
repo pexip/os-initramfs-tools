@@ -40,4 +40,9 @@ if [ "$1" = configure ] && dpkg --compare-versions "$2" lt 0.123~; then
 	finish_mv_conffile /etc/initramfs-tools/initramfs.conf initramfs-tools-core
 fi
 
+# Remove obsolete state directory
+if [ "$1" = configure ] && dpkg --compare-versions "$2" lt 0.138~; then
+	rm -rf /var/lib/initramfs-tools
+fi
+
 #DEBHELPER#

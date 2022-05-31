@@ -1,0 +1,25 @@
+#!/bin/sh -eu
+
+export LC_COLLATE=C.UTF-8
+unset LC_ALL
+
+# The packages that install hook/boot scripts
+dpkg -S /usr/share/initramfs-tools/hooks /usr/share/initramfs-tools/scripts \
+	| sed 's/: .*//; s/, /\n/g' \
+	| sort -u \
+	> "$AUTOPKGTEST_TMP/installed-packages"
+
+# The packages that we're prepared to test
+echo "initramfs-tools initramfs-tools-core klibc-utils kmod udev" \
+	| sed 's/ /\n/g' \
+	| sort -u \
+	> "$AUTOPKGTEST_TMP/tested-packages"
+
+# Installed hook/boot scripts that we're prepared to test
+join "$AUTOPKGTEST_TMP/installed-packages" "$AUTOPKGTEST_TMP/tested-packages" \
+	| xargs dpkg -L \
+	| grep -E '^/usr/share/initramfs-tools/(hooks|scripts)/' \
+	| while read file; do test -f "$file" && printf '%s\n' "$file"; done \
+	> "$AUTOPKGTEST_TMP/hook-boot-scripts"
+
+shellcheck -e SC1090,SC1091 -s dash /usr/bin/lsinitramfs /usr/sbin/mkinitramfs /usr/bin/unmkinitramfs /usr/share/initramfs-tools/hook-functions /usr/share/initramfs-tools/init /etc/kernel/postinst.d/initramfs-tools /etc/kernel/postrm.d/initramfs-tools /usr/sbin/update-initramfs $(cat "$AUTOPKGTEST_TMP/hook-boot-scripts")

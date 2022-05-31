@@ -5,6 +5,7 @@ _log_msg()
 	if [ "${quiet?}" = "y" ]; then return; fi
 	# shellcheck disable=SC2059
 	printf "$@"
+	return 0 # Prevents error carry over in case of unavailable console
 }
 
 log_success_msg()
@@ -41,11 +42,30 @@ panic()
 	fi
 
 	echo "$@"
-	# Disallow console access
+
+	# The panic= parameter implies we should disallow console access
 	if [ -n "${panic?}" ]; then
-		echo "Rebooting automatically due to panic= boot argument"
-		sleep "${panic}"
-		reboot
+		delay=
+		case "${panic?}" in
+		-*[![:digit:].]*)	# invalid: wait forever
+			;;
+		-*)			# timeout < 0: reboot immediately
+			delay=0
+			;;
+		0 | *[![:digit:].]*)	# timeout = 0 or invalid: wait forever
+			;;
+		*)			# timeout > 0: seconds before rebooting
+			delay="${panic}"
+			;;
+		esac
+		if [ -n "${delay}" ]; then
+			echo "Rebooting automatically due to panic= boot argument"
+			sleep "${delay}"
+			reboot -f
+		else
+			echo "Halting automatically due to panic= boot argument"
+			halt -f
+		fi
 		exit  # in case reboot fails, force kernel panic
 	fi
 
@@ -122,6 +142,25 @@ load_modules()
 			modprobe $m
 		done < /conf/modules
 	fi
+}
+
+_uptime() {
+	local uptime
+	uptime="$(cat /proc/uptime)"
+	uptime="${uptime%%[. ]*}"
+	echo "$uptime"
+}
+
+time_elapsed() {
+	# shellcheck disable=SC2154
+	if [ -z "$starttime" ]; then
+		log_failure_msg "time_elapsed() called before \$starttime initialized"
+		echo 0
+	fi
+	local delta
+	delta="$(_uptime)"
+	delta=$((delta - starttime))
+	echo "$delta"
 }
 
 # lilo compatibility
@@ -236,6 +275,21 @@ configure_networking()
 
 	# networking already configured thus bail out
 	[ -n "${DEVICE}" ] && [ -e /run/net-"${DEVICE}".conf ] && return 0
+
+	if [ -n "${DEVICE}" ]; then
+		local netdevwait=180
+		log_begin_msg "Waiting up to ${netdevwait} secs for ${DEVICE} to become available"
+		while [ "$(time_elapsed)" -lt "$netdevwait" ]; do
+			if [ -e "/sys/class/net/${DEVICE}" ]; then
+				break
+			fi
+			sleep 1
+		done
+		if [ ! -e "/sys/class/net/${DEVICE}" ]; then
+			log_failure_msg "Interface ${DEVICE} did not appear in time"
+		fi
+		log_end_msg
+	fi
 
 	wait_for_udev 10
 
@@ -390,11 +444,13 @@ _checkfs_once()
 	if [ "${quiet}" = n ]
 	then
 		log_begin_msg "Will now check $NAME file system"
+		# shellcheck disable=SC2086
 		logsave -a -s $FSCK_LOGFILE fsck $spinner $force $fix -V -t "$TYPE" "$DEV"
 		FSCKCODE=$?
 		log_end_msg
 	else
 		log_begin_msg "Checking $NAME file system"
+		# shellcheck disable=SC2086
 		logsave -a -s $FSCK_LOGFILE fsck $spinner $force $fix -T -t "$TYPE" "$DEV"
 		FSCKCODE=$?
 		log_end_msg

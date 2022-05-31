@@ -64,8 +64,18 @@ get_fsck_type_fstab () {
 }
 
 get_fsck_types() {
-	get_fsck_type_fstab /    root
-	get_fsck_type_fstab /usr /usr
+	if [ "${FSTYPE:-auto}" = auto ]; then
+		get_fsck_type_fstab /    root
+		get_fsck_type_fstab /usr usr
+	else
+		local IFS=,
+		local fstype
+		set -f
+		for fstype in $FSTYPE; do
+			echo "$fstype"
+		done
+		set +f
+	fi
 }
 
 case $1 in

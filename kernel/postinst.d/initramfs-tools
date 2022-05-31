@@ -33,4 +33,4 @@ fi
 
 # we're good - create initramfs.  update runs do_bootloader
 # shellcheck disable=SC2086
-INITRAMFS_TOOLS_KERNEL_HOOK=1 update-initramfs -c -k "${version}" ${bootopt} >&2
+update-initramfs -c -k "${version}" ${bootopt} >&2

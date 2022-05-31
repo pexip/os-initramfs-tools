@@ -33,4 +33,4 @@ fi
 
 # delete initramfs
 # shellcheck disable=SC2086
-INITRAMFS_TOOLS_KERNEL_HOOK=1 update-initramfs -d -k "${version}" ${bootopt} >&2
+update-initramfs -d -k "${version}" ${bootopt} >&2

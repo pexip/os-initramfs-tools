@@ -93,6 +93,12 @@ or is set to \fIauto\fP,
 will automatically select the largest available swap partition.
 Set it to \fInone\fP to disable resume from disk.
 
+.TP
+\fB FSTYPE
+Specifies the filesystem type(s) to support, separated by commas.  If
+this is not defined or is set to \fIauto\fP, \fBmkinitramfs\fP will
+automatically detect the current root and \fI/usr\fP filesystem types.
+
 .SH VARIABLES FOR NFS BOOT
 .TP
 \fB DEVICE

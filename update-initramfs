@@ -1,6 +1,5 @@
 #!/bin/sh
 
-STATEDIR=/var/lib/initramfs-tools
 BOOTDIR=/boot
 CONF=/etc/initramfs-tools/update-initramfs.conf
 mode=""
@@ -12,26 +11,12 @@ set -e
 
 [ -r ${CONF} ] && . ${CONF}
 
-case "$DPKG_MAINTSCRIPT_PACKAGE" in
-linux-image-*)
-	if [ -z "$INITRAMFS_TOOLS_KERNEL_HOOK" ]; then
-		# kernel maintainer script called us directly; ignore
-		# it and let the hook script handle it instead
-		echo "update-initramfs: deferring update (hook will be called later)"
+if [ -n "$DPKG_MAINTSCRIPT_PACKAGE" ] && [ $# = 1 ] && [ x"$1" = x-u ]; then
+	if dpkg-trigger --no-await update-initramfs; then
+		echo "update-initramfs: deferring update (trigger activated)"
 		exit 0
 	fi
-	;;
-?*)
-	if	   [ $# = 1 ]						\
-		&& [ x"$1" = x-u ]
-	then
-		if dpkg-trigger --no-await update-initramfs; then
-			echo "update-initramfs: deferring update (trigger activated)"
-			exit 0
-		fi
-	fi
-	;;
-esac
+fi
 
 usage()
 {
@@ -156,7 +141,6 @@ generate_initramfs()
 	# shellcheck disable=SC2086
 	if mkinitramfs ${OPTS} "${initramfs}.new" "${version}"; then
 		mv -f "${initramfs}.new" "${initramfs}"
-		set_sha1
 		# Guard against an unclean shutdown
 		sync -f "${initramfs}"
 	else
@@ -173,21 +157,10 @@ run_bootloader()
 {
 	# invoke policy conformant bootloader hooks
 	if [ -d /etc/initramfs/post-update.d/ ]; then
-		run-parts --arg=${version} --arg=${initramfs} \
+		run-parts --arg="${version}" --arg="${initramfs}" \
 			/etc/initramfs/post-update.d/
 		return 0
 	fi
-}
-
-# Note that this must overwrite so that updates work.
-set_sha1()
-{
-	sha1sum "${initramfs}" > "${STATEDIR}/${version}"
-}
-
-delete_sha1()
-{
-	rm -f "${STATEDIR}/${version}"
 }
 
 # ro /boot is not modified
@@ -317,8 +290,6 @@ delete()
 
 	echo "update-initramfs: Deleting ${initramfs}"
 
-	delete_sha1
-
 	rm -f "${initramfs}" "${initramfs}.bak"
 }
 
@@ -388,7 +359,14 @@ fi
 
 if [ "${version}" = "all" ] \
 	|| { [ "${update_initramfs}" = "all" ] && [ -z "${version}" ]; }; then
-	get_sorted_versions
+	case "${mode}" in
+	c)
+		version_list="$(linux-version list)"
+		;;
+	d | u)
+		get_sorted_versions
+		;;
+	esac
 	if [ -z "${version_list}" ]; then
 		verbose "Nothing to do, exiting."
 		exit 0

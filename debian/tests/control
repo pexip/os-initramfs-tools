@@ -1,3 +1,27 @@
-# TODO: Check $(find /usr/share/initramfs-tools/hooks /usr/share/initramfs-tools/scripts -type f) once klibc, kmod, and systemd are fixed!
-Test-Command: shellcheck -e SC1090,SC1091 -s dash /usr/bin/lsinitramfs /usr/sbin/mkinitramfs /usr/bin/unmkinitramfs /usr/share/initramfs-tools/hook-functions /usr/share/initramfs-tools/init /etc/kernel/postinst.d/initramfs-tools /etc/kernel/postrm.d/initramfs-tools /usr/sbin/update-initramfs
+Tests: shellcheck
 Depends: @, shellcheck
+Restrictions: superficial
+
+Tests: amd64-klibc
+Depends: @, qemu-system-x86, linux-image-amd64 | linux-image-generic:amd64, klibc-utils, genext2fs
+Restrictions: skip-not-installable
+
+Tests: amd64-busybox
+Depends: @, qemu-system-x86, linux-image-amd64 | linux-image-generic:amd64, klibc-utils, busybox | busybox-initramfs, genext2fs
+Restrictions: skip-not-installable
+
+Tests: amd64-ata-only
+Depends: @, qemu-system-x86, linux-image-amd64 | linux-image-generic:amd64, klibc-utils, genext2fs
+Restrictions: skip-not-installable
+
+Tests: amd64-virtio-only
+Depends: @, qemu-system-x86, linux-image-amd64 | linux-image-generic:amd64, klibc-utils, genext2fs
+Restrictions: skip-not-installable
+
+Tests: amd64-separate-usr
+Depends: @, qemu-system-x86, linux-image-amd64 | linux-image-generic:amd64, klibc-utils, genext2fs
+Restrictions: skip-not-installable
+
+Tests: amd64-panic-shell
+Depends: @, qemu-system-x86, linux-image-amd64 | linux-image-generic:amd64, klibc-utils, genext2fs
+Restrictions: skip-not-installable

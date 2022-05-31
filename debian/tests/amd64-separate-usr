@@ -1,0 +1,36 @@
+#!/bin/sh -e
+
+SUPPORTED_FLAVOURS='amd64 generic'
+ROOTDISK_QEMU_IF=virtio
+ROOTDISK_LINUX_NAME=vda
+USRDISK="$(mktemp)"
+USRDISK_QEMU_IF=virtio
+USRDISK_LINUX_NAME=vdb
+. debian/tests/test-common
+
+cat >>"${CONFDIR}/initramfs.conf" <<EOF
+MODULES=list
+BUSYBOX=n
+FSTYPE=ext2
+EOF
+cat >"${CONFDIR}/modules" <<EOF
+ext2
+virtio_pci
+virtio_blk
+EOF
+build_initramfs
+
+# Set up /usr filesystem and fstab entry for it
+mkdir -p "${ROOTDIR}/etc"
+echo > "${ROOTDIR}/etc/fstab" "/dev/${USRDISK_LINUX_NAME} /usr ext2 defaults 0 2"
+USRDIR="$(mktemp -d)"
+mv "${ROOTDIR}/usr/"* "${USRDIR}"
+
+build_rootfs_ext2
+build_fs_ext2 "${USRDIR}" "${USRDISK}"
+
+run_qemu_amd64
+
+# Check that fsck ran on both devices
+grep -q "^/dev/${ROOTDISK_LINUX_NAME}: clean," "${OUTPUT}"
+grep -q "^/dev/${USRDISK_LINUX_NAME}: clean," "${OUTPUT}"

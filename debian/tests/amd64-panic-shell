@@ -1,0 +1,32 @@
+#!/bin/sh -e
+
+SUPPORTED_FLAVOURS='amd64 generic'
+ROOTDISK_QEMU_IF=virtio
+ROOTDISK_LINUX_NAME=nonexistent
+. debian/tests/test-common
+
+cat >>"${CONFDIR}/initramfs.conf" <<EOF
+MODULES=list
+BUSYBOX=n
+FSTYPE=ext2
+EOF
+cat >"${CONFDIR}/modules" <<EOF
+ext2
+virtio_pci
+virtio_blk
+EOF
+build_initramfs
+
+build_rootfs_ext2
+
+run_qemu_nocheck_amd64
+grep -qF "ALERT!  /dev/nonexistent does not exist.  Dropping to a shell!" "${OUTPUT}"
+grep -qF "(initramfs) " "${OUTPUT}"
+
+run_qemu_nocheck_amd64 "panic=-1"
+grep -qF "Rebooting automatically due to panic= boot argument" "${OUTPUT}"
+! grep -qF "(initramfs) " "${OUTPUT}"
+
+run_qemu_nocheck_amd64 "panic=0"
+grep -qF "Halting automatically due to panic= boot argument" "${OUTPUT}"
+! grep -qF "(initramfs) " "${OUTPUT}"

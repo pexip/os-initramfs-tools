@@ -1,0 +1,100 @@
+# -*- mode: sh -*-
+
+# Find kernel flavour and release
+KVER=
+for flavour in $SUPPORTED_FLAVOURS; do
+	KVER="$(dpkg-query -Wf '${Depends}' "linux-image-${flavour}" 2>/dev/null | tr ',' '\n' | sed -n 's/^ *linux-image-\([-a-z0-9+.]*\).*/\1/p')"
+	if [ "$KVER" ]; then
+		break
+	fi
+done
+if [ -z "$KVER" ]; then
+	echo >&2 "E: Test must set SUPPORTED_FLAVOURS and depend on those flavours"
+	exit 2
+fi
+
+if [ -n "${AUTOPKGTEST_TMP}" ]; then
+	export TMPDIR="${AUTOPKGTEST_TMP}"
+fi
+
+# Skeleton configuration directory
+CONFDIR="$(mktemp -d)"
+cp conf/initramfs.conf "${CONFDIR}/initramfs.conf"
+echo "RESUME=none" >>"${CONFDIR}/initramfs.conf"
+touch "${CONFDIR}/modules"
+mkdir "${CONFDIR}/scripts"
+
+# initramfs image file
+INITRAMFS="$(mktemp)"
+
+# root disk image file
+ROOTDISK="$(mktemp)"
+
+# root disk interface type (for qemu) and device name (for Linux)
+test -n "${ROOTDISK_QEMU_IF}" || ROOTDISK_QEMU_IF=virtio
+test -n "${ROOTDISK_LINUX_NAME}" || ROOTDISK_LINUX_NAME=vda
+
+# Create a root fs with a trivial userspace
+ROOTDIR="$(mktemp -d)"
+INIT_MESSAGE='root fs init system started successfully'
+for subdir in bin dev lib proc run sbin sys usr usr/bin; do
+	mkdir "${ROOTDIR}/${subdir}"
+done
+cat >"${ROOTDIR}/sbin/init" <<EOF
+#!/bin/sh -e
+test -b /dev/${ROOTDISK_LINUX_NAME}
+test -d /proc/1
+test -d /run/initramfs
+test -d /sys/class
+test -d /usr/bin
+echo '${INIT_MESSAGE}'
+poweroff
+EOF
+chmod a+x "${ROOTDIR}/sbin/init"
+cp /usr/lib/klibc/bin/sh "${ROOTDIR}/bin/sh"
+cp /usr/lib/klibc/bin/poweroff "${ROOTDIR}/bin/poweroff"
+cp "$(dpkg -L libklibc | grep '^/lib/klibc.*\.so$')" "${ROOTDIR}/lib/"
+
+# VM output file
+OUTPUT="$(mktemp)"
+
+build_initramfs() {
+	/usr/sbin/mkinitramfs -d "${CONFDIR}" -o "${INITRAMFS}" "${KVER}"
+}
+
+build_fs_ext2() {
+	local dir="${1}"
+	local disk="${2}"
+
+	# Get directory size
+	local blocks="$(du --summarize "${dir}" | cut -f 1)"
+	local inodes="$(du --summarize --inodes "${dir}" | cut -f 1)"
+
+	# Add fudge factor
+	blocks="$((blocks + 20 + blocks / 4))"
+	inodes="$((inodes + 10))"
+
+	# genext2fs writes status messages to stderr; hide that from
+	# autopkgtest
+	genext2fs 2>&1 -b "${blocks}" -N "${inodes}" -U -d "${dir}" "${disk}"
+}
+
+build_rootfs_ext2() {
+	build_fs_ext2 "${ROOTDIR}" "${ROOTDISK}"
+}
+
+_run_qemu_amd64() {
+	local extra_params="$*"
+
+	timeout --foreground 60 qemu-system-x86_64 -m 1G -drive "file=${ROOTDISK},if=${ROOTDISK_QEMU_IF},media=disk,format=raw" ${USRDISK:+-drive "file=${USRDISK},if=${USRDISK_QEMU_IF},media=disk,format=raw"} -nographic -no-reboot -kernel "/boot/vmlinuz-${KVER}" -initrd "${INITRAMFS}" -append "root=/dev/${ROOTDISK_LINUX_NAME} ro console=ttyS0,115200 ${extra_params}" | tee "${OUTPUT}"
+}
+
+run_qemu_nocheck_amd64() {
+	# hide error messages from autopkgtest
+	_run_qemu_amd64 2>&1 "$@"
+}
+
+run_qemu_amd64() {
+	_run_qemu_amd64 "panic=-1"
+	grep -qF "${INIT_MESSAGE}" "${OUTPUT}"
+}

@@ -2,9 +2,9 @@ Source: initramfs-tools
 Section: utils
 Priority: optional
 Maintainer: Pexip AS <packaging@pexip.com>
-XSBC-Pexip-Original-Uploaders: Michael Prokop <mika@debian.org>, Ben Hutchings <ben@decadent.org.uk>
+XSBC-Pexip-Original-Uploaders: Michael Prokop <mika@debian.org>, Ben Hutchings <benh@debian.org>
 XSBC-Pexip-Original-Maintainer: Debian kernel team <debian-kernel@lists.debian.org>
-Build-Depends: debhelper (>= 9), bash-completion, shellcheck
+Build-Depends: debhelper-compat (= 12), bash-completion, shellcheck <!nocheck>
 Rules-Requires-Root: no
 Standards-Version: 4.1.5
 Vcs-Browser: https://salsa.debian.org/kernel-team/initramfs-tools
@@ -28,7 +28,7 @@ Package: initramfs-tools-core
 Architecture: all
 Multi-Arch: foreign
 Recommends: ${busybox:Recommends}, pigz
-Depends: klibc-utils (>= 2.0.4-8~), cpio (>= 2.12), kmod, udev, coreutils (>= 8.24), e2fsprogs, ${misc:Depends}
+Depends: klibc-utils (>= 2.0.4-8~), cpio (>= 2.12), kmod, udev, coreutils (>= 8.24), logsave | e2fsprogs (<< 1.45.3-1~), ${misc:Depends}
 Suggests: bash-completion
 Breaks: initramfs-tools (<< 0.121~), ${busybox:Breaks}
 Replaces: initramfs-tools (<< 0.121~)

@@ -1,0 +1,22 @@
+#!/bin/sh -e
+
+SUPPORTED_FLAVOURS='amd64 generic'
+ROOTDISK_QEMU_IF=ide
+ROOTDISK_LINUX_NAME=sda
+. debian/tests/test-common
+
+cat >>"${CONFDIR}/initramfs.conf" <<EOF
+MODULES=list
+BUSYBOX=n
+FSTYPE=ext2
+EOF
+cat >"${CONFDIR}/modules" <<EOF
+ext2
+ata_piix
+sd_mod
+EOF
+build_initramfs
+
+build_rootfs_ext2
+
+run_qemu_amd64

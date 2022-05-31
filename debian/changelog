@@ -1,3 +1,203 @@
+initramfs-tools (0.140) unstable; urgency=medium
+
+  [ Norbert Lange ]
+  * mkinitramfs: use temporary file for uncompressed cpio
+
+  [ Michael Prokop ]
+  * mkinitramfs: report actually requested compress util if it's not present
+
+  [ Ben Hutchings ]
+  * init: Mount /dev without the noexec option
+
+  [ dann frazier ]
+  * configure_networking(): Wait for specified network device (Closes: #965935)
+
+  [ Bastian Blank ]
+  * Include all PCI controller modules
+  * Include all reset controller modules
+
+ -- Bastian Blank <waldi@debian.org>  Sat, 13 Mar 2021 19:13:18 +0100
+
+initramfs-tools (0.139) unstable; urgency=medium
+
+  * [9679f0c] debian/tests: Run amd64 tests on either amd64 or generic flavour
+  * [0099040] debian/tests/control: Mark all amd64 tests as
+    skip-not-installable (Closes: #970184)
+  * [3616c8f] conf/initramfs.conf: Fix typo "filesytem" (Closes: #970235)
+
+ -- Ben Hutchings <benh@debian.org>  Sun, 13 Sep 2020 19:28:00 +0100
+
+initramfs-tools (0.138) unstable; urgency=medium
+
+  [ Ben Hutchings ]
+  * [0b034b4] docs/maintainer-notes.md: Delete the horizontal rules
+  * [ba883cb] docs/maintainer-notes.md: Use Gitlab markup for table of contents
+  * [5284a00] docs/maintainer-notes.md: Use Gitlab markup for definition table
+  * [a469b7e] docs/maintainer-notes.md: Use archive.org URL for Daniel Baumann
+    doc
+  * [424260e] debian/control, docs/maintainer-notes.md: Use my @debian.org
+    address
+  * [181a35c] update-initramfs: Remove test for direct invocation from kernel
+    package
+  * [6ebe41b] Remove obsolete update-initramfs state in
+    /var/lib/initramfs-tools
+  * [2f2ad0d] hook-functions: copy_exec: Copy libgcc_s.so with any soversion up
+    to 9 (Closes: #959768)
+  * [0f24cc1] Add CI configuration for salsa.debian.org
+  * [9877542] initramfs.conf: Delete "NFS Section" comment
+  * [4309c3b] Add FSTYPE config parameter to allow overriding filesystem type
+    detection (Closes: #923400)
+  * [6300aa1] Change "panic" parameter handling to work more like the kernel
+  * [90d64bd] debian/tests: Add common test preparation code
+  * [3dd2984] debian/tests: Add basic test for amd64 using klibc and not
+    busybox
+  * [69240b1] debian/tests: Add basic test for amd64 using busybox
+  * [3d834c8] debian/tests: Add basic tests for amd64 with only ata/virtio
+    driver
+  * [c14b760] debian/tests: Add test for separate /usr device
+  * [6b3b361] debian/tests: Add test of the panic shell and parameter handling
+
+  [ Vagrant Cascadian ]
+  * [482897b] hook-functions: Add modules needed for Pinebook LCD display.
+
+  [ Guilherme G. Piccoli ]
+  * [c3cbf35] scripts/functions: Prevents printf error carry over if wrong
+    console is set (Closes: #960355)
+
+  [ Unit 193 ]
+  * [3b82099] When overriding configured compressor, warn the user.
+
+  [ Norbert Lange ]
+  * [e94f410] un-,mkinitramfs: add support for zstd (Closes: #955469)
+
+  [ Jann Horn ]
+  * [a7718dc] Add firmware for built-in drivers (Closes: #857054)
+
+ -- Ben Hutchings <benh@debian.org>  Fri, 11 Sep 2020 20:37:29 +0100
+
+initramfs-tools (0.137) unstable; urgency=medium
+
+  [ Ben Hutchings ]
+  * [1b28d25] Document copy_exec as usable for shared libraries
+  * [f2ac13e] hook-functions: copy_exec: Copy libgcc_s.so.1 along with
+    libpthread.so.* (Closes: #950254)
+  * [d96228a] hook-functions: copy_exec: Correct verbose log message for
+    symlinks
+  * [dd5fb36] hook-functions: Factor out device class walking into a function
+  * [14a00af] hook-functions: Don't add backlight modules if we have generic
+    fb device (Closes: #955347)
+  * [f6133e1] Fix new shellcheck warnings around unquoted parameter expansion
+    (Closes: #958851)
+
+  [ AP ]
+  * [857042c] hook-functions: Search for firmware under /lib/firmware/updates
+    (Closes: #956663)
+
+ -- Ben Hutchings <benh@debian.org>  Tue, 28 Apr 2020 04:56:17 +0100
+
+initramfs-tools (0.136) unstable; urgency=medium
+
+  [ Mathieu Malaterre ]
+  * [90bd459] Update to new name for kernel module therm_pm72
+
+  [ Alper Nebi Yasak ]
+  * [ded7214] hook-functions: Handle dw_mmc-rockchip hidden dependency on
+    rockchip-io-domain
+  * [da85190] hook-functions: Include modules for Chromebook Plus display
+
+  [ Ben Hutchings ]
+  * [afd2668] debian/tests/control: Mark shellcheck test as superficial
+  * [9d8b690] mkinitramfs: Remove workaround for old udev versions
+  * [2b55aca] mkinitramfs: Remove special case for Arm OABI ports
+  * [a9e5169] mkinitramfs: Remove armhf dynamic linker hack
+  * [b19b6f3] debian/rules: Suppress execution of dh_installinitramfs
+  * [8330bcd] mkinitramfs: Use cp -p option for ld.so.conf* instead of -aZ
+  * [15fd713] initramfs-tools(7): Change example to use copy_exec instead of cp
+  * [c2d589e] Revert "mkinitramfs: check if initramfs has a shell"
+  * [835d584] mkinitramfs: Copy modules.builtin.bin into initramfs
+    (Closes: #948257)
+  * [0012977] init: Remove special case for kernel parameter resume=UUID=...
+  * [897ab77] update-initramfs: Make "-c -k all" options useful again
+    (Closes: #926401)
+  * [d6c6eec] init: Mount /dev with "exec" option if v86d is present
+    (Closes: #940171)
+  * [a9e73b5] hook-functions: Drop ext4dev from filesystem module list
+  * [41d9ceb] mkinitramfs: Enable multihreaded xz compression (Closes: #942144)
+
+  [ Alexander Volkov ]
+  * [e34affa] Don't require build dependency on shellcheck when nocheck profile
+    is enabled
+
+  [ Johannes 'josch' Schauer ]
+  * [e2ad678] hook-functions: preloaded libraries should not end up in the
+    initramfs (Closes: #944929)
+
+  [ Debian Janitor ]
+  * [a1e17fc] Bump debhelper from old 9 to 12.
+  * [4d86d1a] Set debhelper-compat version in Build-Depends.
+
+  [ Romain Perier ]
+  * [4df27e2] hook-functions: Add f2fs as base in auto_add_modules
+
+  [ Christian Göttsche ]
+  * [0db5752] Do not copy SELinux context in mkinitramfs (Closes: #948365)
+
+  [ Topi Miettinen ]
+  * [55afeec] Tighten permissions for /run/initramfs
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Sat, 18 Jan 2020 18:48:51 +0000
+
+initramfs-tools (0.135) unstable; urgency=medium
+
+  [ Topi Miettinen ]
+  * [eb98d2e] init: /dev can be noexec and /run nodev
+
+  [ Alper Nebi Yasak ]
+  * [43488a3] hook-functions: Handle spi-rockchip hidden dependency on pl330
+
+  [ Ben Hutchings ]
+  * [116ce5c] autopkgtest: Only test hook and boot scripts from specific
+    packages
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Wed, 21 Aug 2019 23:06:28 +0100
+
+initramfs-tools (0.134) unstable; urgency=medium
+
+  [ Ben Hutchings ]
+  * [8aeae9f] hooks/resume: Disable resume when there are no suitable swap
+    devices. Thanks to Trek <trek00@inbox.ru> (Closes: #916696)
+  * [40f6647] hook-functions: Include all keyboard driver modules when
+    MODULES=most. Thanks to Alper Nebi Yasak <alpernebiyasak@gmail.com>
+  * [797e5fe] hook-functions: Include cros_ec_spi and SPI drivers when
+    MODULES=most. Thanks to Alper Nebi Yasak <alpernebiyasak@gmail.com>
+  * [f65627d] resume: Set plymouth status only if there is a suspend image
+    (Closes: #928736)
+  * [c31a908] hook-functions: Fix copy_file with target of "/bin"
+    (Closes: #928689)
+  * [8a29ef3] scripts/functions: Use "reboot -f" to reboot on panic.
+    Thanks to Michael Niewöhner <linux@mniewoehner.de> (Closes: #923165)
+  * [da9f53e] unmkinitramfs: Work around lz4cat filename check.
+    Thanks to Dimitri John Ledkov <xnox@ubuntu.com> (Closes: #930366)
+  * [cf7bb4b] initramfs-tools-core: Depend on logsave or older e2fsprogs
+    (Closes: #932854)
+  * [8570718] update-initramfs(8): Document -d option as "delete" instead of
+    "remove"
+  * [fffe514] update-initramfs(8): Update description of "-k all" option
+
+  [ Benjamin Drung ]
+  * [5e94f22] autopkgtest: Check also
+    /usr/share/initramfs-tools/{hooks,scripts}
+
+  [ Alper Nebi Yasak ]
+  * [994d698] hook-functions: Include extcon-usbc-cros-ec when MODULES=most
+  * [4e3496a] hook-functions: Include extcon drivers when MODULES=dep
+
+  [ Uwe Kleine-König ]
+  * [37dcf3d] mkinitramfs: suppress warning when using bzip2 or lzma
+    (Closes: #930754)
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Sun, 28 Jul 2019 01:10:56 +0100
+
 initramfs-tools (0.133+deb10u1pexip2) pexip; urgency=medium
 
   * Rebuild in buster environment
@@ -9,33 +209,6 @@ initramfs-tools (0.133+deb10u1pexip1) pexip; urgency=medium
   * Migrate to Buster
 
  -- Vincent Sanders <vince@pexip.com>  Fri, 28 Feb 2020 22:30:54 +0000
-
-initramfs-tools (0.133+deb10u1) buster; urgency=medium
-
-  [ Ben Hutchings ]
-  * [998371a] hooks/resume: Disable resume when there are no suitable swap
-    devices. Thanks to Trek <trek00@inbox.ru> (Closes: #916696)
-  * [d653197] hook-functions: Include all keyboard driver modules when
-    MODULES=most. Thanks to Alper Nebi Yasak <alpernebiyasak@gmail.com>
-  * [5681ccb] hook-functions: Include cros_ec_spi and SPI drivers when
-    MODULES=most. Thanks to Alper Nebi Yasak <alpernebiyasak@gmail.com>
-  * [8d62542] resume: Set plymouth status only if there is a suspend image
-    (Closes: #928736)
-  * [073586a] hook-functions: Fix copy_file with target of "/bin"
-    (Closes: #928689)
-  * [a78d9a5] unmkinitramfs: Work around lz4cat filename check.
-    Thanks to Dimitri John Ledkov <xnox@ubuntu.com> (Closes: #930366)
-  * [48a35de] update-initramfs(8): Update description of "-k all" option
-
-  [ Alper Nebi Yasak ]
-  * [1abb6f6] hook-functions: Include extcon-usbc-cros-ec when MODULES=most
-  * [db6d4e2] hook-functions: Include extcon drivers when MODULES=dep
-
-  [ Uwe Kleine-König ]
-  * [360fb48] mkinitramfs: suppress warning when using bzip2 or lzma
-    (Closes: #930754)
-
- -- Ben Hutchings <ben@decadent.org.uk>  Fri, 23 Aug 2019 02:16:37 +0100
 
 initramfs-tools (0.133) unstable; urgency=medium
 
