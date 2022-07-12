@@ -86,7 +86,7 @@ matroxfb)
 	;;
 intelfb|i810fb|i915)
 	# Needs AGP driver loaded
-	modprobe intel-agp
+	/sbin/modprobe intel-agp
 	;;
 uvesafb)
 	# v86d requires /dev/zero and dev/mem, but udev haven't been started yet
@@ -99,9 +99,9 @@ esac
 
 if [ -n "${FB}" ]; then
 	unset MODPROBE_OPTIONS
-	modprobe -q fbcon
+	/sbin/modprobe -q fbcon
 	# shellcheck disable=SC2086
-	modprobe -q ${FB} ${OPTS}
+	/sbin/modprobe -q ${FB} ${OPTS}
 fi
 
 if [ -e /proc/fb ]; then

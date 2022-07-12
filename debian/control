@@ -3,7 +3,7 @@ Section: utils
 Priority: optional
 Uploaders: Michael Prokop <mika@debian.org>, Ben Hutchings <benh@debian.org>
 Maintainer: Debian kernel team <debian-kernel@lists.debian.org>
-Build-Depends: debhelper-compat (= 12), bash-completion, shellcheck <!nocheck>
+Build-Depends: debhelper-compat (= 12), bash-completion
 Rules-Requires-Root: no
 Standards-Version: 4.1.5
 Vcs-Browser: https://salsa.debian.org/kernel-team/initramfs-tools
@@ -25,7 +25,7 @@ Description: generic modular initramfs generator (automation)
 Package: initramfs-tools-core
 Architecture: all
 Multi-Arch: foreign
-Recommends: ${busybox:Recommends}, pigz
+Recommends: ${busybox:Recommends}, zstd
 Depends: klibc-utils (>= 2.0.4-8~), cpio (>= 2.12), kmod, udev, coreutils (>= 8.24), logsave | e2fsprogs (<< 1.45.3-1~), ${misc:Depends}
 Suggests: bash-completion
 Breaks: initramfs-tools (<< 0.121~), ${busybox:Breaks}

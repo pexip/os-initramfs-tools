@@ -99,13 +99,13 @@ maybe_break()
 			else
 				opts="-v"
 			fi
-			modprobe ${opts} -a i8042 atkbd ehci-pci ehci-orion \
+			/sbin/modprobe ${opts} -a i8042 atkbd ehci-pci ehci-orion \
 				 ehci-hcd ohci-hcd ohci-pci uhci-hcd usbhid xhci \
 				 xhci-pci xhci-hcd
 			sleep 2
 			for modalias in /sys/bus/hid/devices/*/modalias; do
 				if [ -f "${modalias}" ]; then
-					modprobe ${opts} -b "$(cat "${modalias}")"
+					/sbin/modprobe ${opts} -b "$(cat "${modalias}")"
 				fi
 			done
 		fi
@@ -139,7 +139,7 @@ load_modules()
 				continue
 			fi
 			# shellcheck disable=SC2086
-			modprobe $m
+			/sbin/modprobe $m
 		done < /conf/modules
 	fi
 }
@@ -212,13 +212,10 @@ get_fstype ()
 	return 0
 }
 
-_handle_device_vs_ip()
+_set_netdev_from_ip_param()
 {
-	# If the ip= parameter is present and is a colon-separated list,
-	# then:
-	# - If it specifies a device, use that in preference to any
-	#   device name we already have
-	# - Otherwise, substitute in any device name we already have
+	# If the ip= parameter is present and specifies a device, use
+	# that in preference to any device name we already have
 	local IFS=:
 	set -f
 	# shellcheck disable=SC2086
@@ -226,7 +223,55 @@ _handle_device_vs_ip()
 	set +f
 	if [ -n "$6" ]; then
 		DEVICE="$6"
-	elif [ $# -ge 2 ] && [ -n "${DEVICE}" ]; then
+		return 0
+	fi
+	return 1
+}
+
+_set_netdev_from_hw_address()
+{
+	local want_address="$1"
+	local device
+	for device in /sys/class/net/*; do
+		if [ -f "$device/address" ] &&
+		   [ "$(cat "$device/address")" = "$want_address" ]; then
+			DEVICE="${device##*/}"
+			return 0
+		fi
+	done
+	return 1
+}
+
+_usable_netdev_exists()
+{
+	# Look for a device with IFF_LOOPBACK clear and (IFF_BROADCAST
+	# or IFF_POINTTOPOINT) set.  This is the same test the kernel
+	# and ipconfig apply to find a device.
+	local device
+	local flags
+	for device in /sys/class/net/*; do
+		if [ -f "${device}/flags" ]; then
+			flags="$(cat "${device}/flags")"
+			if [ "$((flags & 8))" -eq 0 ] &&
+			   [ "$((flags & 0x12))" -ne 0 ]; then
+				return 0
+			fi
+		fi
+	done
+	return 1
+}
+
+_update_ip_param()
+{
+	# If the ip= parameter is present, and is a colon-separated list,
+	# but does not specify a device, substitute in the device name
+	# we have
+	local IFS=:
+	set -f
+	# shellcheck disable=SC2086
+	set -- ${IP}
+	set +f
+	if [ -z "$6" ] && [ $# -ge 2 ] && [ -n "${DEVICE}" ]; then
 		IP="$1:$2:$3:$4:$5:${DEVICE}"
 		shift 6 || shift $#
 		IP="${IP}:$*"
@@ -235,11 +280,19 @@ _handle_device_vs_ip()
 
 configure_networking()
 {
-	if [ -n "${BOOTIF}" ]; then
+	local netdev_desc
+
+	# The order of precedence here is:
+	# 1. Device specified by ip= kernel parameter
+	# 2. Device matching MAC specified by BOOTIF= kernel parameter
+	# 3. Build-time DEVICE variable
+	# In case 2 we only discover the device name while waiting
+	# for a device.
+	if _set_netdev_from_ip_param; then
+		netdev_desc="${DEVICE}"
+	elif [ -n "${BOOTIF}" ]; then
 		# pxelinux sets BOOTIF to a value based on the mac address of the
-		# network card used to PXE boot, so use this value for DEVICE rather
-		# than a hard-coded device name from initramfs.conf. this facilitates
-		# network booting when machines may have multiple network cards.
+		# network card used to PXE boot
 		# pxelinux sets BOOTIF to 01-$mac_address
 
 		# strip off the leading "01-", which isn't part of the mac
@@ -258,38 +311,36 @@ configure_networking()
 		done
 		unset IFS
 
-		# look for devices with matching mac address, and set DEVICE to
-		# appropriate value if match is found.
-		for device in /sys/class/net/* ; do
-			if [ -f "$device/address" ]; then
-				current_mac=$(cat "$device/address")
-				if [ "$bootif_mac" = "$current_mac" ]; then
-					DEVICE=${device##*/}
-					break
-				fi
-			fi
-		done
+		_set_netdev_from_hw_address "${bootif_mac}"
+		netdev_desc="device with address ${bootif_mac}"
+	elif [ -n "${DEVICE}" ]; then
+		netdev_desc="${DEVICE}"
+	else
+		netdev_desc="any network device"
 	fi
-
-	_handle_device_vs_ip
 
 	# networking already configured thus bail out
 	[ -n "${DEVICE}" ] && [ -e /run/net-"${DEVICE}".conf ] && return 0
 
-	if [ -n "${DEVICE}" ]; then
-		local netdevwait=180
-		log_begin_msg "Waiting up to ${netdevwait} secs for ${DEVICE} to become available"
-		while [ "$(time_elapsed)" -lt "$netdevwait" ]; do
-			if [ -e "/sys/class/net/${DEVICE}" ]; then
-				break
-			fi
-			sleep 1
-		done
-		if [ ! -e "/sys/class/net/${DEVICE}" ]; then
-			log_failure_msg "Interface ${DEVICE} did not appear in time"
+	local netdevwait=180
+	log_begin_msg "Waiting up to ${netdevwait} secs for ${netdev_desc} to become available"
+	while true; do
+		if [ "$(time_elapsed)" -ge "$netdevwait" ]; then
+			log_failure_msg "Network device did not appear in time"
+			break
 		fi
-		log_end_msg
-	fi
+		if [ -n "${DEVICE}" ]; then
+			[ -e "/sys/class/net/${DEVICE}" ] && break
+		elif [ -n "${bootif_mac}" ]; then
+			_set_netdev_from_hw_address "${bootif_mac}" && break
+		else
+			_usable_netdev_exists && break
+		fi
+		sleep 1
+	done
+	log_end_msg
+
+	_update_ip_param
 
 	wait_for_udev 10
 

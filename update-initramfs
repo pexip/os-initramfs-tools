@@ -11,7 +11,7 @@ set -e
 
 [ -r ${CONF} ] && . ${CONF}
 
-if [ -n "$DPKG_MAINTSCRIPT_PACKAGE" ] && [ $# = 1 ] && [ x"$1" = x-u ]; then
+if [ -n "$DPKG_MAINTSCRIPT_PACKAGE" ] && [ $# = 1 ] && [ "$1" = -u ]; then
 	if dpkg-trigger --no-await update-initramfs; then
 		echo "update-initramfs: deferring update (trigger activated)"
 		exit 0

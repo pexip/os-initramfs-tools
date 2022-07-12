@@ -64,6 +64,13 @@ will default to gzip if the kernel lacks support (CONFIG_RD) or the
 corresponding userspace utility is not present.
 
 .TP
+\fB COMPRESSLEVEL
+Specifies the compression level used for the initramfs image.
+.B mkinitramfs
+will default to 9 for lz4, 9 for zstd, and the builtin defaults for all
+others.
+
+.TP
 \fB UMASK
 Set the umask value of the generated initramfs file.
 Useful to not disclose eventual keys.

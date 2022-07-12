@@ -76,6 +76,11 @@ if ! ischroot && [ -r /proc/swaps ]; then
 			report_verbose "Rejecting $resume_auto since it is zram"
 			ephemeral=true
 			;;
+
+		/dev/zd[0-9]*)
+			report_verbose "Rejecting $resume_auto since it is zvol"
+			ephemeral=true
+			;;
 		esac
 
 		$ephemeral || break

@@ -4,3 +4,21 @@ include:
 
 variables:
   RELEASE: 'unstable'
+  # We only build arch:all packages
+  SALSA_CI_DISABLE_BLHC: 'true'
+  SALSA_CI_DISABLE_BUILD_PACKAGE_I386: 'true'
+  SALSA_CI_DISABLE_BUILD_PACKAGE_ANY: 'true'
+  SALSA_CI_DISABLE_CROSSBUILD_ARM64: 'true'
+
+shellcheck:
+  stage: test
+  image: $SALSA_CI_IMAGES_BASE
+  except:
+    variables:
+      - $CI_COMMIT_TAG != null
+  script:
+    - apt-get update
+    - apt-get install -y shellcheck
+    - |
+        shellcheck -e SC1090,SC1091 -s dash hook-functions $(find hooks scripts -type f) $({ find . -maxdepth 1 -type f -executable; find debian -maxdepth 1 -type f; find docs kernel -type f; } | xargs grep -l '^#!/bin/sh')
+  needs: []
