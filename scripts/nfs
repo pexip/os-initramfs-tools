@@ -39,7 +39,7 @@ nfs_mount_root_impl()
 	configure_networking
 
 	# get nfs root from dhcp
-	if [ "x${NFSROOT}" = "xauto" ]; then
+	if [ "${NFSROOT}" = "auto" ]; then
 		# check if server ip is part of dhcp root-path
 		if [ "${ROOTPATH#*:}" = "${ROOTPATH}" ]; then
 			NFSROOT=${ROOTSERVER}:${ROOTPATH}
@@ -81,7 +81,7 @@ nfs_mount_root()
 	nfs_top
 
 	# For DHCP
-	modprobe af_packet
+	/sbin/modprobe af_packet
 
 	wait_for_udev 10
 
@@ -130,7 +130,7 @@ nfs_mount_fs()
 	nfs_top
 
 	# For DHCP
-	modprobe af_packet
+	/sbin/modprobe af_packet
 
 	wait_for_udev 10
 

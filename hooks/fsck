@@ -47,7 +47,7 @@ get_fsck_type_fstab () {
 	eval "$(_read_fstab_entry "$1")"
 
 	# Not found by default.
-	if [ "$1" = "$MNT_DIR" ] && [ "$MNT_PASS" != 0 ]; then
+	if [ "$1" = "$MNT_DIR" ]; then
 		# Ignore filesystem type for /, as it is not available and
 		# therefore never used at boot time
 		if [ "${MNT_DIR}" = "/" ] || [ "${MNT_TYPE}" = "auto" ]; then

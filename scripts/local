@@ -56,7 +56,7 @@ local_device_setup()
 	# Load ubi with the correct MTD partition and return since fstype
 	# doesn't work with a char device like ubi.
 	if [ -n "$UBIMTD" ]; then
-		modprobe ubi "mtd=$UBIMTD"
+		/sbin/modprobe ubi "mtd=$UBIMTD"
 		DEV="${dev_id}"
 		return
 	fi

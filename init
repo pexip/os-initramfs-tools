@@ -34,6 +34,13 @@ export quiet
 # Note that this only becomes /dev on the real filesystem if udev's scripts
 # are used; which they will be, but it's worth pointing out
 mount -t devtmpfs -o nosuid,mode=0755 udev /dev
+
+# Prepare the /dev directory
+[ ! -h /dev/fd ] && ln -s /proc/self/fd /dev/fd
+[ ! -h /dev/stdin ] && ln -s /proc/self/fd/0 /dev/stdin
+[ ! -h /dev/stdout ] && ln -s /proc/self/fd/1 /dev/stdout
+[ ! -h /dev/stderr ] && ln -s /proc/self/fd/2 /dev/stderr
+
 mkdir /dev/pts
 mount -t devpts -o noexec,nosuid,gid=5,mode=0620 devpts /dev/pts || true
 
@@ -167,7 +174,7 @@ for x in $(cat /proc/cmdline); do
 		;;
 	netconsole=*)
 		netconsole=${x#netconsole=}
-		[ "x$debug" = "xy" ] && log_output=/dev/kmsg
+		[ "$debug" = "y" ] && log_output=/dev/kmsg
 		;;
 	BOOTIF=*)
 		BOOTIF=${x#BOOTIF=}
@@ -213,7 +220,7 @@ run_scripts /scripts/init-top
 
 maybe_break modules
 [ "$quiet" != "y" ] && log_begin_msg "Loading essential drivers"
-[ -n "${netconsole}" ] && modprobe netconsole netconsole="${netconsole}"
+[ -n "${netconsole}" ] && /sbin/modprobe netconsole netconsole="${netconsole}"
 load_modules
 [ "$quiet" != "y" ] && log_end_msg
 

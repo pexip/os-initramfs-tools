@@ -97,8 +97,8 @@ manual_add_modules()
 	# configuration lines and embedded softdep information is not
 	# processed.  So we run twice, with and without this option.
 	# shellcheck disable=SC2034
-	{ modprobe --all --set-version="${version?}" --ignore-install --quiet --show-depends "$@";
-	  modprobe --all --set-version="${version}" --quiet --show-depends "$@"; } |
+	{ /sbin/modprobe --all --set-version="${version?}" --ignore-install --quiet --show-depends "$@";
+	  /sbin/modprobe --all --set-version="${version}" --quiet --show-depends "$@"; } |
 	while read -r prefix kmod options ; do
 		if [ "${prefix}" != "insmod" ]; then
 			continue
@@ -575,11 +575,6 @@ dep_add_modules()
 		modules="$modules virtio_pci virtio_mmio"
 	fi
 
-	if [ -e /sys/bus/i2o/devices/ ]; then
-		force_load i2o_block
-		force_load i2o_config
-	fi
-
 	if [ -e /sys/bus/ps3_system_bus/ ]; then
 		modules="$modules ps3disk ps3rom ps3-gelic ps3_sys_manager"
 	fi
@@ -603,7 +598,7 @@ auto_add_modules()
 	local modules=
 
 	if [ "$#" -eq 0 ] ; then
-		set -- base net ide scsi block ata i2o dasd ieee1394 firewire mmc usb_storage fb
+		set -- base net ide scsi block ata dasd firewire mmc usb_storage fb
 	fi
 
 	for arg in "$@" ; do
@@ -626,6 +621,7 @@ auto_add_modules()
 			copy_modules_dir kernel/drivers/usb/isp1760
 			copy_modules_dir kernel/drivers/usb/musb
 			copy_modules_dir kernel/drivers/usb/renesas_usbhs
+			copy_modules_dir kernel/drivers/usb/typec/tcpm
 			# and any extcon drivers for USB
 			modules="$modules extcon-usb-gpio extcon-usbc-cros-ec"
 			# Add the axp20x_usb_power power supply driver,
@@ -674,11 +670,19 @@ auto_add_modules()
 		;;
 		net)
 			copy_modules_dir kernel/drivers/net \
-				appletalk arcnet bonding can dummy.ko \
-				hamradio hippi ifb.ko irda macvlan.ko \
-				macvtap.ko pcmcia sb1000.ko team tokenring \
-				tun.ko usb veth.ko wan wimax wireless \
-				xen-netback.ko
+				appletalk arcnet bonding can cdc-phonet.ko \
+				cdc_mbim.ko cdc_subset.ko cx82310_eth.ko \
+				dummy.ko gl620a.ko hamradio hippi hso.ko \
+				huawei_cdc_ncm.ko ifb.ko ipheth.ko irda \
+				kalmia.ko lg-vl600.ko macvlan.ko macvtap.ko \
+				net1080.ko pcmcia plusb.ko qmi_wwan.ko \
+				sb1000.ko sierra_net.ko team tokenring tun.ko \
+				veth.ko wan wimax wireless xen-netback.ko \
+				zaurus.ko
+
+			# Required to initialize Ethernet (FEC) on ARM64 iMX8M
+			# devices.
+			modules="$modules nvmem-imx-ocotp"
 		;;
 		ide)
 			copy_modules_dir kernel/drivers/ide
@@ -688,6 +692,7 @@ auto_add_modules()
 		;;
 		scsi)
 			copy_modules_dir kernel/drivers/scsi
+			copy_modules_dir kernel/drivers/ufs
 			modules="$modules mptfc mptsas mptscsih mptspi zfcp"
 		;;
 		ata)
@@ -701,14 +706,8 @@ auto_add_modules()
 		ubi)
 			modules="$modules deflate zlib lzo ubi ubifs"
 		;;
-		ieee1394)
-			modules="$modules ohci1394 sbp2"
-		;;
 		firewire)
 			modules="$modules firewire-ohci firewire-sbp2"
-		;;
-		i2o)
-			modules="$modules i2o_block"
 		;;
 		dasd)
 			modules="$modules dasd_diag_mod dasd_eckd_mod dasd_fba_mod"
@@ -718,8 +717,11 @@ auto_add_modules()
 		;;
 		fb)
 			# For machines that don't have a generic framebuffer device.
-			modules="$modules rockchipdrm pwm-cros-ec pwm_bl panel-simple"
-			modules="$modules analogix-anx6345 pwm-sun4i sun4i-drm sun8i-mixer"
+			modules="$modules rockchipdrm pwm-cros-ec pwm_bl pwm-rockchip panel-simple"
+			modules="$modules analogix-anx6345 pwm-sun4i sun4i-drm sun8i-mixer panel-edp"
+			# For panel/backlight on MNT Reform 2
+			modules="$modules pwm_imx27 nwl-dsi ti-sn65dsi86 imx-dcss"
+			modules="$modules mux-mmio mxsfb imx8mq-interconnect"
 		;;
 		esac
 	done
@@ -739,7 +741,9 @@ hidden_dep_add_modules()
 	manual_add_modules $(
 		{
 			cat "${DESTDIR}/lib/modules/${version}/modules.builtin"
-			find "${DESTDIR}/lib/modules/${version}/kernel" -name '*.ko*'
+			if [ -d "${DESTDIR}/lib/modules/${version}/kernel" ]; then
+				find "${DESTDIR}/lib/modules/${version}/kernel" -name '*.ko*'
+			fi
 		} |
 		while read -r module; do
 			module="${module##*/}"
@@ -773,7 +777,7 @@ hidden_dep_add_modules()
 				echo pl330
 				;;
 			dw_mmc-rockchip)
-				echo rockchip-io-domain
+				echo rockchip-io-domain io-domain
 				;;
 			esac
 		done
@@ -802,7 +806,7 @@ set_initlist()
 		[ "${si_x}" = "${initdir}/*" ] && return
 
 		# only allow variable name chars
-		case ${si_x#${initdir}/} in
+		case "${si_x#"${initdir}"/}" in
 		*[![:alnum:]\._-]*)
 			[ "${verbose}" = "y" ] \
 			&& echo "$si_x ignored: not alphanumeric or '_' file" >&2
@@ -817,7 +821,7 @@ set_initlist()
 			continue
 		fi
 
-		si_x="$(get_source "${si_x#${initdir}/}")"
+		si_x="$(get_source "${si_x#"${initdir}"/}")"
 
 		# skip non executable scripts
 		if [ ! -x "${si_x}" ]; then

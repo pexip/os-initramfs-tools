@@ -1,3 +1,87 @@
+initramfs-tools (0.142) unstable; urgency=medium
+
+  [ Dan Streetman ]
+  * [8c9840e] hooks/fsck: always include fsck binary (LP: #1917780)
+
+  [ Dimitri John Ledkov ]
+  * [d8c5864] mkinitramfs: decompress compressed kernel modules
+
+  [ szubersk ]
+  * [e447e91] resume: Don't resume from a swap device on a ZVOL
+
+  [ Johannes Schauer Marin Rodrigues ]
+  * [834d01d] hook-functions: Add pwm-imx27, nwl-dsi, ti-sn65dsi86,
+    imx-dcss, mxsfb, mux-mmio and imx8mq-interconnect for MNT Reform 2
+    panel/backlight.
+
+  [ Rich Ercolani ]
+  * [50d945a] Add support for specifying compression level
+
+  [ Ben Hutchings ]
+  * [5bf479d] hook-functions: Remove support for ieee1394 and i2o
+  * [9a4d579] hook-functions: auto_add_modules: Include UFS drivers from
+    drivers/ufs/
+
+  [ Sven Joachim ]
+  * [c064b9e] Copy modules.builtin.modinfo into initramfs (Closes: #1014319)
+
+ -- Ben Hutchings <benh@debian.org>  Tue, 12 Jul 2022 23:51:34 +0200
+
+initramfs-tools (0.141) unstable; urgency=medium
+
+  [ Hideki Yamane ]
+  * [742c8ee] Use zstd as default compression for initramfs (Closes: #976054)
+  * [b6ccfb6] Recommends: s/pigz/zstd/
+  * [1063c43] Add check whether zstd support kernel (>= 5.9) and
+    CONFIG_RD_ZSTD=y or not
+  * [71c29fd] As comparison, compression level 9 is better.
+  * [9cee2f0] Consider SOURCE_DATE_EPOCH option for zstd
+
+  [ Alper Nebi Yasak ]
+  * [db7aec4] hook-functions: Include io-domain in dw_mmc-rockchip hidden
+    dependencies
+
+  [ Michael Biebl ]
+  * [7ec5e26] Setup /dev/fd and /dev/std{in,out,err} after mounting devtmpfs
+    (Closes: #981302)
+
+  [ Dan Streetman ]
+  * [116b532] hook-functions: check for dir before running find on it
+    (LP: #1927779)
+
+  [ Vagrant Cascadian ]
+  * [a5d9b32] hook-functions: Add pwm-rockchip to "fb" modules for Pinebook PRO
+    LCD display.
+  * [7e15676] hook-functions: Add usb/typec/tcpm modules to support keyboard on
+    Pinebook PRO.
+  * [5f17c03] hook-functions: Add panel-edp to "fb" modules for Pinebook PRO
+    LCD display.
+
+  [ Ben Hutchings ]
+  * [26f2f00] Only run shellcheck in Salsa CI (Closes: #992798)
+  * [bd1519b] Fix shellcheck warning "Avoid x-prefix in comparisons ..."
+  * [4937118] hook-functions: Fix shellcheck warning "Expansions inside ${..}
+    need to be ..."
+  * [883f4ad] mkiniramfs: Log warning about missing compressor to stderr
+  * [035190c] mkinitramfs: Generalise kernel compression support check
+  * [58e05e4] d/salsa-ci.yml: Disable non-arch:all builds
+  * [5679e26] debian/tests/control: Add zstd as dependency to avoid (fatal)
+    warnings
+  * [e856af4] hook-functions: Support network boot via USB Ethernet adapters
+    (Closes: #980788)
+  * [ec5c6c7] scripts/functions: Refactor device name logic in
+    configure_networking
+  * [80eddcf] scripts/functions: Make configure_networking wait for device
+    specified any way (Closes: #911727)
+
+  [ Ben Love ]
+  * [02dc65f] Fully-qualify modprobe calls to avoid busybox
+
+  [ Ariel D'Alessandro ]
+  * [8a6f73c] hook-functions: Add nvmem-imx-ocotp driver module to network boot
+
+ -- Ben Hutchings <benh@debian.org>  Sun, 10 Apr 2022 23:39:45 +0200
+
 initramfs-tools (0.140pexip3) pexip-bullseye; urgency=medium
 
   * Bullseye rebuild for ARM64 inclusion
