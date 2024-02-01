@@ -1,3 +1,9 @@
+initramfs-tools (0.142+pexip24u3) pexip-bookworm; urgency=medium
+
+  * New versioning scheme
+
+ -- Mark Hymers <mark.hymers@pexip.com>  Thu, 01 Feb 2024 16:01:51 +0000
+
 initramfs-tools (0.142pexip2) pexip-bookworm; urgency=medium
 
   * Bookworm build for product distribution
