@@ -172,6 +172,10 @@ copy_file() {
 		target="${target}/${src##*/}"
 	fi
 
+	# Canonicalise target to be absolute, so the comparisons below
+	# will work
+	target="$(realpath -ms "/${target}")" || return 2
+
 	# Canonicalise usr-merged target directories
 	case "${target}" in
 	/bin/* | /lib* | /sbin/*) target="/usr${target}" ;;
@@ -182,11 +186,12 @@ copy_file() {
 
 	mkdir -p "${DESTDIR}/${target%/*}"
 
-	if [ -h "${src}" ]; then
-		# We don't need to replicate a chain of links completely;
-		# just link directly to the ultimate target
-		link_target="$(readlink -f "${src}")" || return $(($? + 1))
-
+	# Check whether source or one of its ancestors is a symlink.
+	# If so, copy the symlink target and make the target a symlink
+	# too.  We don't need to replicate a chain of links completely;
+	# just link directly to the ultimate target.
+	link_target="$(readlink -f "${src}")" || return $(($? + 1))
+	if [ "${link_target}" != "$(realpath -s "$src")" ]; then
 		# Update source for the copy
 		src="${link_target}"
 
@@ -628,6 +633,10 @@ auto_add_modules()
 			# required to initialize the USB host controllers
 			# on a number of armhf systems
 			modules="$modules axp20x_usb_power"
+			# Add onboard_usb_hub so it can be probed before
+			# mounts, otherwise it might reset power to a
+			# USB disk already mounted as root
+			modules="$modules onboard_usb_hub onboard_usb_dev"
 
 			# Include all keyboard drivers and all HID drivers
 			# unless we're sure they don't support keyboards.
@@ -638,8 +647,7 @@ auto_add_modules()
 				'hid-*ff.ko' hid-a4tech.ko hid-cypress.ko \
 				hid-dr.ko hid-elecom.ko hid-gyration.ko \
 				hid-icade.ko hid-kensington.ko hid-kye.ko \
-				hid-lcpower.ko hid-magicmouse.ko \
-				hid-multitouch.ko hid-ntrig.ko \
+				hid-lcpower.ko hid-magicmouse.ko hid-ntrig.ko \
 				hid-petalynx.ko hid-picolcd.ko hid-pl.ko \
 				hid-ps3remote.ko hid-quanta.ko \
 				'hid-roccat-ko*.ko' hid-roccat-pyra.ko \
@@ -649,6 +657,9 @@ auto_add_modules()
 				hid-wiimote.ko hid-zydacron.ko
 			# needed to access keyboard on some ChromeOS devices
 			modules="$modules cros_ec_spi"
+			# needed to access keyboard in Gen2 Hyper-V virtual
+			# machines (e.g. full disk encryption scenarios)
+			modules="$modules hyperv-keyboard"
 
 			# Any of these might be needed by other drivers
 			copy_modules_dir kernel/drivers/bus
@@ -885,7 +896,7 @@ call_scripts()
 		if [ "$ec" -ne 0 ]; then
 			echo "E: ${initdir}/${cs_x} failed with return $ec." >&2
 			# only errexit on mkinitramfs
-			[ -n "${version}" ] && exit $ec
+			[ -n "${version}" ] && exit "$ec"
 		fi
 		# allow boot scripts to modify exported boot parameters
 		if [ -e /conf/param.conf ]; then

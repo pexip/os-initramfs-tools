@@ -52,6 +52,7 @@ get_fsck_type_fstab () {
 		# therefore never used at boot time
 		if [ "${MNT_DIR}" = "/" ] || [ "${MNT_TYPE}" = "auto" ]; then
 			MNT_FSNAME="$(resolve_device "${MNT_FSNAME}")"
+			# shellcheck disable=SC2317
 			fstype() { "/usr/lib/klibc/bin/fstype" "$@"; }
 			if ! get_fstype "${MNT_FSNAME}"; then
 				echo "W: Couldn't identify type of $2 file system for fsck hook" >&2

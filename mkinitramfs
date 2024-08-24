@@ -261,6 +261,7 @@ DESTDIR=
 __TMPCPIOGZ=
 __TMPMAINCPIO=
 __TMPEARLYCPIO=
+# shellcheck disable=SC2317
 clean_on_exit() {
 	if [ "${keep}" = "y" ]; then
 		echo "Working files in ${DESTDIR:-<not yet created>}," \

@@ -1,3 +1,30 @@
+initramfs-tools (0.142+deb12u1) bookworm; urgency=medium
+
+  [ Ben Hutchings ]
+  * [522d475] d/salsa-ci.yml: Set RELEASE to bookworm
+  * [05e5fb9] hook_functions: Fix copy_file with source including a directory
+    symlink (Closes: #1076539)
+  * [f52ae2d] hook-functions: copy_file: Canonicalise target filename
+    (Closes: #1079276)
+
+  [ szubersk ]
+  * [d502a7f] Fix/ignore ShellCheck findings
+
+  [ Benjamin Drung ]
+  * [ce185c3] test: Fix too small ext2 block count
+  * [cd5e8e8] install hid-multitouch module for Surface Pro 4 Keyboard
+    (LP: #1772094)
+
+  [ Arnaud Rebillout ]
+  * [4cc2bc7] Add hyper-keyboard module, needed to enter LUKS password in
+    Hyper-V (Closes: #1028511)
+
+  [ Alper Nebi Yasak ]
+  * [5d28dad] hook-functions: auto_add_modules: Add onboard_usb_hub,
+    onboard_usb_dev
+
+ -- Ben Hutchings <benh@debian.org>  Sun, 25 Aug 2024 01:14:50 +0200
+
 initramfs-tools (0.142) unstable; urgency=medium
 
   [ Dan Streetman ]

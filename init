@@ -209,7 +209,7 @@ mount -t tmpfs -o "nodev,noexec,nosuid,size=${RUNSIZE:-10%},mode=0755" tmpfs /ru
 mkdir -m 0700 /run/initramfs
 
 if [ -n "$log_output" ]; then
-	exec >$log_output 2>&1
+	exec >"$log_output" 2>&1
 	unset log_output
 fi
 
@@ -243,7 +243,7 @@ log_begin_msg "Mounting root file system"
 # /usr, irrespective of the boot script used to mount the rootfs).
 . /scripts/local
 . /scripts/nfs
-. /scripts/${BOOT}
+. "/scripts/${BOOT}"
 parse_numeric "${ROOT}"
 maybe_break mountroot
 mount_top

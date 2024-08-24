@@ -95,7 +95,7 @@ splitinitramfs()
 			test "$magic" = 070701 || test "$magic" = 070702 || break
 			namesize=0x$(readhex "$initramfs" $((end + 94)) 8)
 			filesize=0x$(readhex "$initramfs" $((end + 54)) 8)
-			end=$(((end + 110)))
+			end=$((end + 110))
 			end=$(((end + namesize + 3) & ~3))
 			end=$(((end + filesize + 3) & ~3))
 		done
@@ -121,11 +121,11 @@ splitinitramfs()
 		start=$end
 	done
 
-	if [ $end -gt 0 ]; then
+	if [ "$end" -gt 0 ]; then
 		# Extract to main subdirectory
 		subarchive=$(mktemp "${TMPDIR:-/var/tmp}/unmkinitramfs_XXXXXX")
 		trap 'rm -f "$subarchive"' EXIT
-		dd < "$initramfs" skip=$end iflag=skip_bytes 2> /dev/null \
+		dd < "$initramfs" skip="$end" iflag=skip_bytes 2> /dev/null \
 			> "$subarchive"
 		xcpio "$subarchive" "${dir:+$dir/main}" -i "$@"
 	else
