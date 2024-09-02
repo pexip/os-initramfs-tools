@@ -102,7 +102,7 @@ backup_booted_initramfs()
 
 	# no backup yet
 	if [ ! -r "${initramfs}.bak" ]; then
-		mv -f ${initramfs_bak} "${initramfs}.bak"
+		mv -f "${initramfs_bak}" "${initramfs}.bak"
 		verbose "Backup ${initramfs}.bak"
 		return 0
 	fi
@@ -119,7 +119,7 @@ backup_booted_initramfs()
 		return 0
 	fi
 	verbose "Removing current backup ${initramfs_bak}"
-	rm -f ${initramfs_bak}
+	rm -f "${initramfs_bak}"
 }
 
 # nuke generated copy

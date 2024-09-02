@@ -3,7 +3,7 @@ include:
   - https://salsa.debian.org/salsa-ci-team/pipeline/raw/master/pipeline-jobs.yml
 
 variables:
-  RELEASE: 'unstable'
+  RELEASE: 'bookworm'
   # We only build arch:all packages
   SALSA_CI_DISABLE_BLHC: 'true'
   SALSA_CI_DISABLE_BUILD_PACKAGE_I386: 'true'

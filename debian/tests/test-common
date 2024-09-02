@@ -71,7 +71,7 @@ build_fs_ext2() {
 	local inodes="$(du --summarize --inodes "${dir}" | cut -f 1)"
 
 	# Add fudge factor
-	blocks="$((blocks + 20 + blocks / 4))"
+	blocks="$((blocks + 28 + blocks / 4))"
 	inodes="$((inodes + 10))"
 
 	# genext2fs writes status messages to stderr; hide that from

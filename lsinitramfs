@@ -53,5 +53,6 @@ if [ "$#" -eq 0 ] ; then
 fi
 
 for initramfs in "$@" ; do
+	# shellcheck disable=SC2086
 	unmkinitramfs $umi_opts -- "$initramfs"
 done
