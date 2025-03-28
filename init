@@ -42,7 +42,7 @@ mount -t devtmpfs -o nosuid,mode=0755 udev /dev
 [ ! -h /dev/stderr ] && ln -s /proc/self/fd/2 /dev/stderr
 
 mkdir /dev/pts
-mount -t devpts -o noexec,nosuid,gid=5,mode=0620 devpts /dev/pts || true
+mount -t devpts -o noexec,nosuid,gid=5,mode=0600 devpts /dev/pts || true
 
 # Export the dpkg architecture
 export DPKG_ARCH=
@@ -101,7 +101,10 @@ for x in $(cat /proc/cmdline); do
 		ROOTFLAGS="-o ${x#rootflags=}"
 		;;
 	rootfstype=*)
-		ROOTFSTYPE="${x#rootfstype=}"
+		# Linux interprets 'rootfstype=*tmpfs*' to control the
+		# initramfs filesystem; we should remove 'tmpfs' from
+		# the list
+		ROOTFSTYPE="$(list_filter_out "${x#rootfstype=}" tmpfs)"
 		;;
 	rootdelay=*)
 		ROOTDELAY="${x#rootdelay=}"
@@ -261,6 +264,12 @@ fi
 mount_bottom
 nfs_bottom
 local_bottom
+
+case "$IP" in
+""|none|off) ;; # Do nothing
+*)
+	configure_networking
+esac
 
 maybe_break bottom
 [ "$quiet" != "y" ] && log_begin_msg "Running /scripts/init-bottom"

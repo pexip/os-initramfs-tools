@@ -1,4 +1,5 @@
 # -*- shell-script -*-
+# shellcheck shell=sh
 
 _log_msg()
 {
@@ -152,8 +153,7 @@ _uptime() {
 }
 
 time_elapsed() {
-	# shellcheck disable=SC2154
-	if [ -z "$starttime" ]; then
+	if [ -z "${starttime-}" ]; then
 		log_failure_msg "time_elapsed() called before \$starttime initialized"
 		echo 0
 	fi
@@ -219,9 +219,9 @@ _set_netdev_from_ip_param()
 	local IFS=:
 	set -f
 	# shellcheck disable=SC2086
-	set -- ${IP}
+	set -- ${IP-}
 	set +f
-	if [ -n "$6" ]; then
+	if [ -n "${6-}" ]; then
 		DEVICE="$6"
 		return 0
 	fi
@@ -271,7 +271,7 @@ _update_ip_param()
 	# shellcheck disable=SC2086
 	set -- ${IP}
 	set +f
-	if [ -z "$6" ] && [ $# -ge 2 ] && [ -n "${DEVICE}" ]; then
+	if [ -z "${6-}" ] && [ $# -ge 2 ] && [ -n "${DEVICE-}" ]; then
 		IP="$1:$2:$3:$4:$5:${DEVICE}"
 		shift 6 || shift $#
 		IP="${IP}:$*"
@@ -290,7 +290,7 @@ configure_networking()
 	# for a device.
 	if _set_netdev_from_ip_param; then
 		netdev_desc="${DEVICE}"
-	elif [ -n "${BOOTIF}" ]; then
+	elif [ -n "${BOOTIF-}" ]; then
 		# pxelinux sets BOOTIF to a value based on the mac address of the
 		# network card used to PXE boot
 		# pxelinux sets BOOTIF to 01-$mac_address
@@ -313,14 +313,14 @@ configure_networking()
 
 		_set_netdev_from_hw_address "${bootif_mac}"
 		netdev_desc="device with address ${bootif_mac}"
-	elif [ -n "${DEVICE}" ]; then
+	elif [ -n "${DEVICE-}" ]; then
 		netdev_desc="${DEVICE}"
 	else
 		netdev_desc="any network device"
 	fi
 
 	# networking already configured thus bail out
-	[ -n "${DEVICE}" ] && [ -e /run/net-"${DEVICE}".conf ] && return 0
+	[ -n "${DEVICE-}" ] && [ -e /run/net-"${DEVICE}".conf ] && return 0
 
 	local netdevwait=180
 	log_begin_msg "Waiting up to ${netdevwait} secs for ${netdev_desc} to become available"
@@ -329,9 +329,9 @@ configure_networking()
 			log_failure_msg "Network device did not appear in time"
 			break
 		fi
-		if [ -n "${DEVICE}" ]; then
+		if [ -n "${DEVICE-}" ]; then
 			[ -e "/sys/class/net/${DEVICE}" ] && break
-		elif [ -n "${bootif_mac}" ]; then
+		elif [ -n "${bootif_mac-}" ]; then
 			_set_netdev_from_hw_address "${bootif_mac}" && break
 		else
 			_usable_netdev_exists && break
@@ -353,11 +353,11 @@ configure_networking()
 		# The NIC is to be configured if this file does not exist.
 		# Ip-Config tries to create this file and when it succeds
 		# creating the file, ipconfig is not run again.
-		for x in /run/net-"${DEVICE}".conf /run/net-*.conf ; do
+		for x in /run/net-"${DEVICE-}".conf /run/net-*.conf ; do
 			[ -e "$x" ] && break 2
 		done
 
-		case ${IP} in
+		case "${IP-}" in
 		none|off)
 			# Do nothing
 			;;
@@ -374,15 +374,121 @@ configure_networking()
 		esac
 	done
 
-	# source ipconfig output
-	if [ -n "${DEVICE}" ]; then
-		# source specific bootdevice
-		. "/run/net-${DEVICE}.conf"
-	else
-		# source any interface...
-		# ipconfig should have quit after first response
-		. /run/net-*.conf
+	# source ipconfig output (first try specific bootdevice, then any
+	# interface...). ipconfig should have quit after first response
+	local file
+	for file in "/run/net-${DEVICE-}.conf" /run/net-*.conf; do
+		if [ -e "$file" ]; then
+			. "$file"
+			break
+		fi
+	done
+
+	netinfo_to_resolv_conf /etc/resolv.conf "/run/net-${DEVICE-}.conf" /run/net-*.conf
+
+	if test -n "${HOSTNAME-}"; then
+		persist_hostname "${HOSTNAME}" "${DNSDOMAIN-}"
 	fi
+}
+
+# Write resolv.conf from /run/net-<device> style files.
+# $1=resolv.conf path (print to stdout if "-" is specified)
+# remaining parameters: /run/net-<device> style files
+netinfo_to_resolv_conf()
+{
+	local domain="" n="" nameservers="" net_file="" resolv_conf="" search="" output="$1" CR="
+"
+	shift
+
+	for net_file in "$@"; do
+		# Define sourced variables as local to avoid causing side effects.
+		# shellcheck disable=SC2034
+		local DEVICE="" PROTO="" IPV4ADDR="" IPV4BROADCAST="" IPV4NETMASK="" IPV4ROUTE0SUBNET="" \
+			IPV4ROUTE0GATEWAY="" IPV4ROUTE1SUBNET="" IPV4ROUTE1GATEWAY="" IPV4GATEWAY="" \
+			IPV4DNS0="" IPV4DNS1="" HOSTNAME="" DNSDOMAIN="" NISDOMAIN="" ROOTSERVER="" ROOTPATH="" \
+			filename="" UPTIME="" DHCPLEASETIME="" DOMAINSEARCH=""
+		[ -e "$net_file" ] || continue
+		. "$net_file" || { echo "Error: Failed to source $net_file" >&2; return 1; }
+		if test -n "${DNSDOMAIN}"; then
+			domain="${DNSDOMAIN}"
+		fi
+		for n in "${IPV4DNS0}" "${IPV4DNS1}"; do
+			if test -z "$n" -o "$n" = 0.0.0.0; then
+				continue
+			fi
+			# Remove duplicates
+			case " ${nameservers} " in
+				*\ $n\ *)
+					continue ;;
+			esac
+			nameservers="${nameservers} ${n}"
+		done
+		for n in ${DOMAINSEARCH}; do
+			[ -n "$n" ] || continue
+			# Remove duplicates
+			case " ${search} " in
+				*\ $n\ *)
+					continue ;;
+			esac
+			search="${search} ${n}"
+		done
+	done
+
+	# Construct content for resolv.conf
+	if test -n "${domain}"; then
+		resolv_conf="${resolv_conf}domain ${domain}${CR}"
+	fi
+	for n in ${nameservers}; do
+		resolv_conf="${resolv_conf}nameserver $n${CR}"
+	done
+	if test -n "${search}"; then
+		resolv_conf="${resolv_conf}search ${search# }${CR}"
+	fi
+
+	if test -z "$resolv_conf"; then
+		echo "no search or nameservers found in $*" 1>&2
+		return
+	fi
+	if test "$output" = "-"; then
+		printf "%s" "$resolv_conf"
+	else
+		printf "%s" "$resolv_conf" > "$output"
+	fi
+}
+
+_generate_hosts_content()
+{
+	local hostname="$1"
+	local domain="$2"
+	local fqdn
+
+	if test -n "${domain}"; then
+		fqdn="${hostname}.${domain}	"
+	else
+		fqdn=""
+	fi
+	cat <<EOF
+127.0.0.1	localhost
+127.0.1.1	${fqdn}${hostname}
+
+# The following lines are desirable for IPv6 capable hosts
+::1     localhost ip6-localhost ip6-loopback
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+EOF
+}
+
+# Write hostname into /etc/hostname and /etc/hosts
+# $1=hostname
+# $2=domain (optional)
+persist_hostname()
+{
+	local hostname="$1"
+	local domain="${2-}"
+
+	echo "$hostname" > /etc/hostname
+	echo "$hostname" > /proc/sys/kernel/hostname
+	_generate_hosts_content "$hostname" "$domain" > /etc/hosts
 }
 
 # Wait for queued kernel/udev events
@@ -410,7 +516,7 @@ read_fstab_entry() {
 					;;
 				esac
 				if [ "$MNT_DIR" = "$1" ]; then
-					if [ -n "$2" ]; then
+					if [ -n "${2-}" ]; then
 						[ "$MNT_TYPE" = "$2" ] || continue;
 					fi
 					found=0
@@ -495,13 +601,11 @@ _checkfs_once()
 	if [ "${quiet}" = n ]
 	then
 		log_begin_msg "Will now check $NAME file system"
-		# shellcheck disable=SC2086
 		logsave -a -s $FSCK_LOGFILE fsck $spinner $force $fix -V -t "$TYPE" "$DEV"
 		FSCKCODE=$?
 		log_end_msg
 	else
 		log_begin_msg "Checking $NAME file system"
-		# shellcheck disable=SC2086
 		logsave -a -s $FSCK_LOGFILE fsck $spinner $force $fix -T -t "$TYPE" "$DEV"
 		FSCKCODE=$?
 		log_end_msg
@@ -550,6 +654,31 @@ mountfs()
 	fi
 
 	${type}_mount_fs "$1"
+}
+
+# Filter matching items out of a comma-separated list.
+# $1=list
+# $2=pattern to match (may include shell wildcards)
+list_filter_out()
+{
+	local pattern="$2"
+	local item result
+	local IFS=,
+	set -f
+	# shellcheck disable=SC2086
+	set -- $1
+	set +f
+	for item in "$@"; do
+		# shellcheck disable=SC2254
+		case "$item" in
+		$pattern)
+			;;
+		*)
+			result="${result:+$result,}${item}"
+			;;
+		esac
+	done
+	echo "$result"
 }
 
 # Mount the root file system.  It should be overridden by all

@@ -1,4 +1,4 @@
 conf/update-initramfs.conf	etc/initramfs-tools
-update-initramfs	usr/sbin
 debian/script		usr/share/bug/initramfs-tools
 kernel			etc
+update-initramfs	usr/sbin

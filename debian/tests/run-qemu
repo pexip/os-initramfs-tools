@@ -1,0 +1,54 @@
+#!/bin/sh
+set -eu
+
+# Run qemu-system for the system architecture
+
+if test "$#" -lt 3; then
+	echo "${0##*/}: Error: Not enough parameters." >&2
+	echo "Usage: ${0##*/} kernel initrd append [extra_args]" >&2
+	exit 1
+fi
+
+kernel="$1"
+initrd="$2"
+append="$3"
+shift 3
+
+ARCHITECTURE=$(dpkg --print-architecture)
+
+case "$ARCHITECTURE" in
+arm64)
+	machine="virt,gic-version=max"
+	cpu="max,pauth-impdef=on"
+	efi_code=/usr/share/AAVMF/AAVMF_CODE.fd
+	efi_vars=/usr/share/AAVMF/AAVMF_VARS.fd
+	;;
+armhf)
+	machine="virt"
+	efi_code=/usr/share/AAVMF/AAVMF32_CODE.fd
+	efi_vars=/usr/share/AAVMF/AAVMF32_VARS.fd
+	console=ttyAMA0
+	;;
+ppc64el)
+	machine="cap-ccf-assist=off,cap-cfpc=broken,cap-ibs=broken,cap-sbbc=broken"
+	console=hvc0
+	;;
+esac
+
+if [ -c /dev/kvm ] && [ "$ARCHITECTURE" != "ppc64el" ]; then
+	machine="${machine:+$machine,}accel=kvm:tcg"
+fi
+
+if test -f "${efi_vars-}"; then
+	efi_vars_copy="$(mktemp -t "${efi_vars##*/}.XXXXXXXXXX")"
+	cp "$efi_vars" "$efi_vars_copy"
+fi
+
+set -- ${machine:+-machine "${machine}"} -cpu "${cpu-max}" -m 1G \
+	${efi_code:+-drive "file=${efi_code},if=pflash,format=raw,read-only=on"} \
+	${efi_vars:+-drive "file=${efi_vars_copy},if=pflash,format=raw"} \
+	-device virtio-rng-pci,rng=rng0 -object rng-random,filename=/dev/urandom,id=rng0 \
+	-nodefaults -no-reboot -kernel "${kernel}" -initrd "${initrd}" "$@" \
+	-append "console=${console:-ttyS0},115200 ro ${append}"
+echo "${0##*/}: qemu-system-${ARCHITECTURE} $*"
+exec "qemu-system-${ARCHITECTURE}" "$@"

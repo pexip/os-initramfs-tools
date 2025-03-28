@@ -2,46 +2,18 @@
 
 set -e
 
-mvverbose=-v
-
-# from dpkg-maintscript-helper, modified
-ensure_package_owns_file() {
-	local PACKAGE="$1"
-	local FILE="$2"
-
-	dpkg-query -L "$PACKAGE" | grep -F -q -x "$FILE"
-}
-
-# from dpkg-maintscript-helper, modified
-finish_mv_conffile() {
-	local CONFFILE="$1"
-	local PACKAGE="$2"
-
-	rm $mvverbose -f "$CONFFILE.dpkg-remove"
-
-	[ -e "$CONFFILE.dpkg-backup" ] || return 0
-	ensure_package_owns_file "$PACKAGE" "$CONFFILE" || return 0
-
-	echo "Preserving user changes to $CONFFILE (now owned by $PACKAGE)..."
-	if [ -e "$CONFFILE" ]; then
-		mv $mvverbose -f "$CONFFILE" "$CONFFILE.dpkg-new"
-	fi
-	mv $mvverbose -f "$CONFFILE.dpkg-backup" "$CONFFILE"
-}
-
-# If initramfs-tools-core was fully upgraded to 0.123 before our
-# preinst ran, we need to move initramfs.conf back into place.
-if [ "$1" = configure ] && [ -n "$2" ] && dpkg --compare-versions "$2" lt 0.123~; then
-	finish_mv_conffile /etc/initramfs-tools/initramfs.conf initramfs-tools-core
-fi
-
 # Regenerate initramfs whenever we go to dpkg state `installed'
 if [ "x$1" != xtriggered ]; then
 	# this activates the trigger, if triggers are working
 	update-initramfs -u
 else
-	# force it to actually happen
-	DPKG_MAINTSCRIPT_PACKAGE='' update-initramfs -u
+	# The /run/update-initramfs.dpkg-trigger file is just a workaround.
+	# The timestamp should be provided directly by the dpkg trigger.
+	# See https://bugs.debian.org/1099136
+	timestamp=$(stat -c %Y /run/update-initramfs.dpkg-trigger 2>/dev/null || true)
+	# force it to actually happen (if not already updated since activation)
+	DPKG_MAINTSCRIPT_PACKAGE='' update-initramfs -u -s "$timestamp"
+	rm -f /run/update-initramfs.dpkg-trigger
 fi
 
 #DEBHELPER#

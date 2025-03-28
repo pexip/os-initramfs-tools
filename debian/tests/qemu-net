@@ -1,0 +1,128 @@
+#!/bin/sh
+set -eu
+
+# Some simple tests of the initramfs network configuration.
+
+# The basic idea is to make an ext2 root image that only ships a /sbin/init to
+# just gather some data and shutdown again and boot it in qemu system
+# emulation (not KVM, so it can be run in the autopkgtest architecture without
+# hoping nested kvm works).  Currently it only sets up qemu user networking
+# which limits our ability to be clever. In the long run we should set up a
+# tun and a bridge and specify the mac address of the NICs in the emulated
+# system and run dnsmasq on it so we test ipv6 and can control which ips which
+# nics get and so on -- but this is still better than nothing.
+
+# TODO: Add a test case for classless static routes. This needs support in
+# Qemu first. Following patch should be refreshed:
+# https://lore.kernel.org/all/20180314190814.22631-1-benjamin.drung@profitbricks.com/
+
+SUPPORTED_FLAVOURS='amd64 arm64 armmp powerpc64le s390x generic'
+ROOTDISK_QEMU_IF=virtio
+ROOTDISK_LINUX_NAME=vda
+. debian/tests/test-common
+
+cat >>"${CONFDIR}/initramfs.conf" <<EOF
+MODULES=list
+BUSYBOX=n
+FSTYPE=ext2
+EOF
+cat >"${CONFDIR}/modules" <<EOF
+ext2
+virtio_pci
+virtio_blk
+virtio_net
+EOF
+install -m 755 debian/tests/hooks/drop-hostname "${CONFDIR}/hooks/drop-hostname"
+install -m 755 debian/tests/hooks/persistent-net "${CONFDIR}/hooks/persistent-net"
+build_initramfs
+
+prepare_network_dumping_rootfs
+build_rootfs_ext2
+
+EXPECTED_DHCP_LAN0="
+DEVICE='lan0'
+PROTO='dhcp'
+IPV4ADDR='10.0.3.15'
+IPV4BROADCAST='10.0.3.255'
+IPV4NETMASK='255.255.255.0'
+IPV4GATEWAY='10.0.3.2'
+IPV4DNS0='10.0.3.3'
+HOSTNAME='pizza'
+DNSDOMAIN='example.com'
+ROOTSERVER='10.0.3.2'
+filename='/path/to/bootfile2'
+DOMAINSEARCH='test.'
+"
+EXPECTED_DHCP_LAN1="
+DEVICE='lan1'
+PROTO='dhcp'
+IPV4ADDR='10.0.2.15'
+IPV4BROADCAST='10.0.2.255'
+IPV4NETMASK='255.255.255.0'
+IPV4GATEWAY='10.0.2.2'
+IPV4DNS0='10.0.2.3'
+HOSTNAME='goulash'
+DNSDOMAIN='test'
+ROOTSERVER='10.0.2.2'
+filename='/path/to/bootfile'
+DOMAINSEARCH='example. example.net.'
+"
+
+run_qemu "ip=dhcp"
+check_output "Begin: Waiting up to 180 secs for any network device to become available"
+./debian/tests/check-log "${OUTPUT}" has_no_running_processes \
+	has_hostname "goulash|pizza" \
+	has_interface_mtu "lan[01]" 1500 \
+	has_ipv4_addr "10\.0\.[23]\.15/24" "lan[01]" \
+	has_ipv4_default_route "10\.0\.[23]\.2" "lan[01]" \
+	has_net_conf 1 "/run/net-lan0.conf=${EXPECTED_DHCP_LAN0}" "/run/net-lan1.conf=${EXPECTED_DHCP_LAN1}"
+
+# Test _set_netdev_from_ip_param
+run_qemu "ip=:::::lan1:dhcp"
+check_output "Begin: Waiting up to 180 secs for lan1 to become available"
+./debian/tests/check-log "${OUTPUT}" has_no_running_processes \
+	has_hostname "goulash" \
+	has_interface_mtu "lan1" 1500 \
+	has_ipv4_addr "10\.0\.2\.15/24" "lan1" \
+	has_ipv4_default_route "10\.0\.2\.2" "lan1" \
+	has_net_conf 1 "/run/net-lan1.conf=${EXPECTED_DHCP_LAN1}"
+
+# Test setting the IP address manually
+run_qemu "ip=10.0.2.100::10.0.2.2:255.0.0.0:lasagne:lan1:"
+check_output "Begin: Waiting up to 180 secs for lan1 to become available"
+./debian/tests/check-log "${OUTPUT}" has_no_running_processes \
+	has_hostname "lasagne" \
+	has_interface_mtu "lan1" 1500 \
+	has_ipv4_addr "10\.0\.2\.100/8" "lan1" \
+	has_ipv4_default_route "10\.0\.2\.2" "lan1" \
+	has_net_conf 1 "/run/net-lan1.conf=DEVICE='lan1'
+PROTO='none'
+IPV4ADDR='10.0.2.100'
+IPV4BROADCAST='10.255.255.255'
+IPV4NETMASK='255.0.0.0'
+IPV4GATEWAY='10.0.2.2'
+IPV4DNS0='0.0.0.0'
+HOSTNAME='lasagne'
+DNSDOMAIN=''
+ROOTSERVER='0.0.0.0'
+filename=''
+DOMAINSEARCH=''"
+
+# Test DHCP configuration with BOOTIF specified
+run_qemu "BOOTIF=01-52-54-00-12-34-56 ip=dhcp"
+check_output "Begin: Waiting up to 180 secs for device with address 52:54:00:12:34:56 to become available"
+./debian/tests/check-log "${OUTPUT}" has_no_running_processes \
+	has_hostname "goulash" \
+	has_interface_mtu "lan1" 1500 \
+	has_ipv4_addr "10\.0\.2\.15/24" "lan1" \
+	has_ipv4_default_route "10\.0\.2\.2" "lan1" \
+	has_net_conf 1 "/run/net-lan1.conf=${EXPECTED_DHCP_LAN1}"
+
+run_qemu "ip=on"
+check_output "Begin: Waiting up to 180 secs for any network device to become available"
+./debian/tests/check-log "${OUTPUT}" has_no_running_processes \
+	has_hostname "goulash|pizza" \
+	has_interface_mtu "lan[01]" 1500 \
+	has_ipv4_addr "10\.0\.[23]\.15/24" "lan[01]" \
+	has_ipv4_default_route "10\.0\.[23]\.2" "lan[01]" \
+	has_net_conf 1 "/run/net-lan0.conf=${EXPECTED_DHCP_LAN0}" "/run/net-lan1.conf=${EXPECTED_DHCP_LAN1}"

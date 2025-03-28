@@ -1,4 +1,4 @@
-.TH UNMKINITRAMFS 8  "2016/12/15" "initramfs\-tools" "System Administration"
+.TH UNMKINITRAMFS 8  "2025/03/20" "initramfs\-tools" "System Administration"
 
 .SH NAME
 unmkinitramfs \- extract content from an initramfs image
@@ -14,10 +14,21 @@ unmkinitramfs \- extract content from an initramfs image
 The
 .B unmkinitramfs
 command extracts the content of a given initramfs image using
-.BR cpio .
-If the image contains multiple segments, each are passed to
 .B cpio
-in order.
+and the appropriate decompressor command.
+
+The initramfs image may be a single compressed cpio archive, or the
+concatenation of any number of uncompressed cpio archives followed by
+a compressed cpio archive.
+
+When the initramfs image includes one or more "early initramfs"
+archives, that is uncompressed archives with microcode or other files
+that the kernel uses directly, these are extracted to sub\-directories
+named "\fBearly\fR", "\fBearly2\fR", etc., and the other archives are
+extracted to a sub\-directory named "\fBmain\fR".
+
+In a future version of initramfs\-tools this behaviour may change so
+that all archives are extracted directly into the given directory.
 
 .SH OPTIONS
 
@@ -40,9 +51,8 @@ Extract initramfs content of current running kernel:
 
 .SH BUGS
 .BR unmkinitramfs
-cannot deal with multiple-segmented initramfs images, except where an
-early (uncompressed) initramfs with system firmware is prepended to
-the regular compressed initramfs.
+does not support initramfs images with more or less than one
+compressed cpio archive.
 
 .SH AUTHOR
 The initramfs-tools are written by Maximilian Attems <maks@debian.org>

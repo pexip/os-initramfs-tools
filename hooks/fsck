@@ -44,6 +44,7 @@ _read_fstab_entry () {
 # Find a specific fstab entry and print its type (if found, and pass != 0)
 # $1=mountpoint
 get_fsck_type_fstab () {
+	local device
 	eval "$(_read_fstab_entry "$1")"
 
 	# Not found by default.
@@ -51,11 +52,11 @@ get_fsck_type_fstab () {
 		# Ignore filesystem type for /, as it is not available and
 		# therefore never used at boot time
 		if [ "${MNT_DIR}" = "/" ] || [ "${MNT_TYPE}" = "auto" ]; then
-			MNT_FSNAME="$(resolve_device "${MNT_FSNAME}")"
+			device="$(resolve_device "${MNT_FSNAME}")"
 			# shellcheck disable=SC2317
 			fstype() { "/usr/lib/klibc/bin/fstype" "$@"; }
-			if ! get_fstype "${MNT_FSNAME}"; then
-				echo "W: Couldn't identify type of $2 file system for fsck hook" >&2
+			if ! get_fstype "${device}"; then
+				echo "W: Couldn't identify type of $2 file system '$MNT_FSNAME' for fsck hook" >&2
 			fi
 			unset -f fstype
 		else

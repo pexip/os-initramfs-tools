@@ -3,20 +3,21 @@ Section: utils
 Priority: optional
 Uploaders: Michael Prokop <mika@debian.org>, Ben Hutchings <benh@debian.org>
 Maintainer: Debian kernel team <debian-kernel@lists.debian.org>
-Build-Depends: debhelper-compat (= 12), bash-completion
+Build-Depends: bash-completion, debhelper-compat (= 13), shunit2 <!nocheck>
 Rules-Requires-Root: no
-Standards-Version: 4.1.5
+Standards-Version: 4.7.2
 Vcs-Browser: https://salsa.debian.org/kernel-team/initramfs-tools
 Vcs-Git: https://salsa.debian.org/kernel-team/initramfs-tools.git
 
 Package: initramfs-tools
 Architecture: all
 Multi-Arch: foreign
-Depends: initramfs-tools-core (= ${binary:Version}), linux-base, ${misc:Depends}
+Depends: initramfs-tools-core (= ${binary:Version}),
+         linux-base,
+         ${misc:Depends}
 Suggests: bash-completion
 Provides: linux-initramfs-tool
-Conflicts: linux-initramfs-tool, usplash (<< 0.5.50)
-Breaks: initscripts (<< 2.88dsf-59.3~), upstart, e2fsprogs (<< 1.42.13)
+Conflicts: linux-initramfs-tool
 Description: generic modular initramfs generator (automation)
  This package builds a bootable initramfs for Linux kernel packages.  The
  initramfs is loaded along with the kernel and is responsible for
@@ -25,11 +26,17 @@ Description: generic modular initramfs generator (automation)
 Package: initramfs-tools-core
 Architecture: all
 Multi-Arch: foreign
-Recommends: ${busybox:Recommends}, zstd
-Depends: klibc-utils (>= 2.0.4-8~), cpio (>= 2.12), kmod, udev, coreutils (>= 8.24), logsave | e2fsprogs (<< 1.45.3-1~), ${misc:Depends}
+Recommends: zstd, ${busybox:Recommends}
+Depends: coreutils (>= 8.24),
+         cpio (>= 2.12),
+         dracut-install,
+         klibc-utils (>= 2.0.4-8~),
+         kmod,
+         logsave | e2fsprogs (<< 1.45.3-1~),
+         udev,
+         ${misc:Depends}
 Suggests: bash-completion
-Breaks: initramfs-tools (<< 0.121~), ${busybox:Breaks}
-Replaces: initramfs-tools (<< 0.121~)
+Breaks: miniramfs (<< 1.0.3~)
 Description: generic modular initramfs generator (core tools)
  This package contains the mkinitramfs program that can be used to
  create a bootable initramfs for a Linux kernel.  The initramfs should

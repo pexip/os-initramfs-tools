@@ -1,33 +1,28 @@
-This package was debianized by Jeff Bailey <jbailey@ubuntu.com> on
-Thu, 27 Jan 2005 15:23:52 -0500.
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Source: https://salsa.debian.org/kernel-team/initramfs-tools
 
-The current Debian maintainer are maximilian attems <maks@debian.org>
-and Michael Prokop <mika@debian.org>.
-
-The current ubuntu release can be found at:
-http://archive.ubuntu.com/ubuntu/pool/main/i/initramfs-tools/
-
-The Debian tree is maintained with "git" at:
-https://anonscm.debian.org/git/kernel/initramfs-tools.git
-https://anonscm.debian.org/cgit/kernel/initramfs-tools.git
-
-Authors: maximilian attems <maks@debian.org>,
-	 Jeff Bailey <jbailey@ubuntu.com>,
-	 David Härdeman <david@hardeman.nu>,
-	 Martin Michlmayr <tbm@cyrius.com>,
-	 Michael Prokop <mika@debian.org>,
-	 Scott James Remnant <scott@ubuntu.com>
-
-Copyright: 2005 - 2011 maximilian attems
-	   2005 Jeff Bailey
-	   2005 - 2007 David Härdeman
-	   2008 - 2010 Martin Michlmayr
-	   2007 - 2011 Michael Prokop
-	   2005 - 2009 Scott James Remnant
-
-License:
-
-GPL v2 or any later version
-
-On Debian systems, the complete text of the GNU General Public License version
-2 can be found in `/usr/share/common-licenses/GPL-2'.
+Files: *
+Copyright: 2005 - 2011 maximilian attems <maks@debian.org>
+           2005 Jeff Bailey <jbailey@ubuntu.com>
+           2005 - 2007 David Härdeman <david@hardeman.nu>
+           2008 - 2010 Martin Michlmayr <tbm@cyrius.com>
+           2007 - 2011 Michael Prokop <mika@debian.org>
+           2005 - 2009 Scott James Remnant <scott@ubuntu.com>
+           2009 - 2024 Ben Hutchings <benh@debian.org>
+           2018 - 2024 Benjamin Drung <bdrung@debian.org>
+License: GPL-2+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+ .
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this package; if not, see 'https://www.gnu.org/licenses/'.
+Comment:
+ On Debian systems, the full text of the GNU General Public License
+ version 2 can be found in the file '/usr/share/common-licenses/GPL-2'.

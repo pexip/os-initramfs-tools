@@ -1,4 +1,5 @@
 # -*- mode: sh -*-
+# shellcheck shell=sh
 
 # Find kernel flavour and release
 KVER=
@@ -13,35 +14,69 @@ if [ -z "$KVER" ]; then
 	exit 2
 fi
 
-if [ -n "${AUTOPKGTEST_TMP}" ]; then
+# If any built-in drivers request firmware, create dummy files to
+# avoid warnings for this (see #1078168).
+tr '\0' '\n' < "/lib/modules/$KVER/modules.builtin.modinfo" \
+| sed -n -e 's/^[^=]*\.firmware=//p' \
+| while read -r fw_file; do
+	mkdir -p "/lib/firmware/$(dirname "$fw_file")"
+	touch "/lib/firmware/$fw_file"
+done
+
+case "$(dpkg --print-architecture)" in
+arm64)
+	# The Ubuntu arm64 autopkgtest runs rarely into the 1200 seconds timeout.
+	QEMU_TIMEOUT=1800
+	;;
+armhf)
+	# qemu-busybox on Ubuntu armhf runs into the 300 seconds timeout.
+	QEMU_TIMEOUT=600
+	;;
+ppc64el)
+	# Slowest execution seen in Ubuntu ppc64el autopkgtest: 230 seconds
+	QEMU_TIMEOUT=600
+	;;
+*)
+	QEMU_TIMEOUT=120
+esac
+
+if [ -n "${AUTOPKGTEST_TMP-}" ]; then
 	export TMPDIR="${AUTOPKGTEST_TMP}"
 fi
 
+BASEDIR="$(mktemp -d -t initramfs-test.XXXXXXXXXX)"
+
 # Skeleton configuration directory
-CONFDIR="$(mktemp -d)"
+CONFDIR="${BASEDIR}/config"
+mkdir -p "${CONFDIR}"
 cp conf/initramfs.conf "${CONFDIR}/initramfs.conf"
 echo "RESUME=none" >>"${CONFDIR}/initramfs.conf"
+mkdir "${CONFDIR}/hooks"
 touch "${CONFDIR}/modules"
 mkdir "${CONFDIR}/scripts"
 
 # initramfs image file
-INITRAMFS="$(mktemp)"
+INITRAMFS="${BASEDIR}/initrd.img"
 
 # root disk image file
-ROOTDISK="$(mktemp)"
+ROOTDISK="${BASEDIR}/rootdisk.raw"
 
 # root disk interface type (for qemu) and device name (for Linux)
 test -n "${ROOTDISK_QEMU_IF}" || ROOTDISK_QEMU_IF=virtio
 test -n "${ROOTDISK_LINUX_NAME}" || ROOTDISK_LINUX_NAME=vda
 
 # Create a root fs with a trivial userspace
-ROOTDIR="$(mktemp -d)"
+ROOTDIR="${BASEDIR}/rootdir"
 INIT_MESSAGE='root fs init system started successfully'
-for subdir in bin dev lib proc run sbin sys usr usr/bin; do
+for subdir in "" dev proc run sys usr usr/bin usr/lib usr/lib64 usr/sbin; do
 	mkdir "${ROOTDIR}/${subdir}"
 done
+for subdir in bin lib lib64 sbin; do
+	ln -s "usr/$subdir" "${ROOTDIR}/${subdir}"
+done
 cat >"${ROOTDIR}/sbin/init" <<EOF
-#!/bin/sh -e
+#!/bin/sh
+set -e
 test -b /dev/${ROOTDISK_LINUX_NAME}
 test -d /proc/1
 test -d /run/initramfs
@@ -53,48 +88,184 @@ EOF
 chmod a+x "${ROOTDIR}/sbin/init"
 cp /usr/lib/klibc/bin/sh "${ROOTDIR}/bin/sh"
 cp /usr/lib/klibc/bin/poweroff "${ROOTDIR}/bin/poweroff"
-cp "$(dpkg -L libklibc | grep '^/lib/klibc.*\.so$')" "${ROOTDIR}/lib/"
+cp "$(dpkg -L libklibc | grep '/klibc-.*\.so$')" "${ROOTDIR}/lib/"
 
 # VM output file
-OUTPUT="$(mktemp)"
+OUTPUT="${BASEDIR}/output.log"
+
+prepare_network_dumping_rootfs() {
+	local root_dir="$ROOTDIR"
+	echo "I: Preparing network dumping rootfs in $root_dir..."
+	cat >"${root_dir}/usr/sbin/init" <<EOF
+#!/bin/sh
+echo "I: Executing /usr/sbin/init from root fs"
+# Stop the kernel from spamming the output
+current_printk=\$(sysctl kernel.printk)
+sysctl -w kernel.printk="4 4 1 7"
+# Run twice, once for the human, once for the test harness
+echo "I: ip addr"
+ip addr
+echo "I: ip route"
+ip route
+echo "I: ip -6 route"
+ip -6 route
+for file in /run/net*.conf; do
+	[ -f \$file ] || continue;
+	echo "########## \$file ##########"
+	cat \$file
+	echo "########################################"
+done
+echo "########## hostname ##########"
+cat /proc/sys/kernel/hostname
+echo "########################################"
+echo "########## ip -json addr ##########"
+ip -json addr
+echo "########################################"
+echo "########## ip -json route ##########"
+ip -json route
+echo "########################################"
+echo "########## ip -json -6 route ##########"
+ip -json -6 route
+echo "########################################"
+echo "########## ps -ww aux ##########"
+ps -ww aux
+echo "########################################"
+sysctl -w "\${current_printk}"
+echo '${INIT_MESSAGE}'
+poweroff
+EOF
+
+	. /usr/share/initramfs-tools/hook-functions
+	for binary in /usr/bin/cat /usr/bin/ip /usr/bin/ps /usr/sbin/sysctl; do
+		verbose=y DESTDIR="$root_dir" copy_exec "$binary"
+	done
+}
 
 build_initramfs() {
+	echo "build_initramfs: /usr/sbin/mkinitramfs -d ${CONFDIR} -o ${INITRAMFS} ${KVER}"
 	/usr/sbin/mkinitramfs -d "${CONFDIR}" -o "${INITRAMFS}" "${KVER}"
 }
 
 build_fs_ext2() {
+	local blocks inodes
 	local dir="${1}"
 	local disk="${2}"
+	local label="${3-}"
 
 	# Get directory size
-	local blocks="$(du --summarize "${dir}" | cut -f 1)"
-	local inodes="$(du --summarize --inodes "${dir}" | cut -f 1)"
+	blocks="$(du --summarize "${dir}" | cut -f 1)"
+	inodes="$(du --summarize --inodes "${dir}" | cut -f 1)"
 
 	# Add fudge factor
 	blocks="$((blocks + 28 + blocks / 4))"
 	inodes="$((inodes + 10))"
 
+	set -- -b "${blocks}" -N "${inodes}" ${label:+-L "$label"} -U -d "${dir}" "${disk}"
+	echo "build_fs_ext2: genext2fs $*"
 	# genext2fs writes status messages to stderr; hide that from
 	# autopkgtest
-	genext2fs 2>&1 -b "${blocks}" -N "${inodes}" -U -d "${dir}" "${disk}"
+	genext2fs 2>&1 "$@"
 }
 
 build_rootfs_ext2() {
 	build_fs_ext2 "${ROOTDIR}" "${ROOTDISK}"
 }
 
-_run_qemu_amd64() {
-	local extra_params="$*"
+_run_qemu() {
+	local append="$1"
+	shift
 
-	timeout --foreground 60 qemu-system-x86_64 -m 1G -drive "file=${ROOTDISK},if=${ROOTDISK_QEMU_IF},media=disk,format=raw" ${USRDISK:+-drive "file=${USRDISK},if=${USRDISK_QEMU_IF},media=disk,format=raw"} -nographic -no-reboot -kernel "/boot/vmlinuz-${KVER}" -initrd "${INITRAMFS}" -append "root=/dev/${ROOTDISK_LINUX_NAME} ro console=ttyS0,115200 ${extra_params}" | tee "${OUTPUT}"
+	echo "I: Running qemu (with a timeout of $QEMU_TIMEOUT seconds)..."
+	timeout --foreground "$QEMU_TIMEOUT" \
+		debian/tests/run-qemu /boot/vmlinu*-"${KVER}" "${INITRAMFS}" "${append}" \
+		-nographic -chardev stdio,id=char0 -serial chardev:char0 "$@" \
+		| tee "${OUTPUT}"
 }
 
-run_qemu_nocheck_amd64() {
+# Run QEMU with default block and network devices
+_run_qemu_default_devices() {
+	local extra_append="$1"
+	_run_qemu "root=/dev/${ROOTDISK_LINUX_NAME} ${extra_append}" \
+		-drive "file=${ROOTDISK},if=${ROOTDISK_QEMU_IF},media=disk,format=raw" \
+		${USRDISK:+-drive "file=${USRDISK},if=${USRDISK_QEMU_IF},media=disk,format=raw"} \
+		-device "virtio-net-pci,netdev=lan0,mac=52:54:00:65:43:21" \
+		-netdev "user,id=lan0,net=10.0.3.0/24,ipv6-net=fec7::/48,hostname=pizza,dnssearch=test,domainname=example.com,bootfile=/path/to/bootfile2" \
+		-device "virtio-net-pci,netdev=lan1,mac=52:54:00:12:34:56" \
+		-netdev "user,id=lan1,hostname=goulash,dnssearch=example,dnssearch=example.net,domainname=test,bootfile=/path/to/bootfile"
+}
+
+run_qemu_in_background() {
+	local rootdisk="$1"
+	local pidfile="$2"
+	local logfile="$3"
+	shift 3
+
+	echo "I: Running qemu in background..."
+	debian/tests/run-qemu /boot/vmlinu*-"${KVER}" "${INITRAMFS}" \
+		"root=/dev/${ROOTDISK_LINUX_NAME} panic=-1" -display none \
+		-drive "file=${rootdisk},if=${ROOTDISK_QEMU_IF},media=disk,format=raw" \
+		-device "virtio-net-pci,netdev=lan9,mac=52:54:00:12:33:21" \
+		-netdev "socket,id=lan9,listen=localhost:1234" \
+		-pidfile "${pidfile}" -serial "file:${logfile}" -daemonize "$@"
+}
+
+run_qemu_nocheck() {
 	# hide error messages from autopkgtest
-	_run_qemu_amd64 2>&1 "$@"
+	_run_qemu_default_devices 2>&1 "${1-}"
 }
 
-run_qemu_amd64() {
-	_run_qemu_amd64 "panic=-1"
+run_qemu() {
+	_run_qemu_default_devices "panic=-1 ${1-}"
 	grep -qF "${INIT_MESSAGE}" "${OUTPUT}"
+}
+
+run_qemu_diskless_with_socket_network() {
+	local append="$1"
+	shift
+	_run_qemu "panic=-1 $append" \
+		-device "virtio-net-pci,netdev=lan0,mac=52:54:00:65:43:21" \
+		-netdev "socket,id=lan0,connect=localhost:1234" "$@"
+	grep -qF "${INIT_MESSAGE}" "${OUTPUT}"
+}
+
+check_no_output() {
+	local msg="$1"
+	if grep -qF "${msg}" "${OUTPUT}"; then
+		echo >&2 "E: Message '${msg}' found in log output '${OUTPUT}."
+		exit 1
+	fi
+}
+
+check_output() {
+	local msg="$1"
+	if ! grep -qF "${msg}" "${OUTPUT}"; then
+		echo >&2 "E: Message '${msg}' not found in log output '${OUTPUT}."
+		exit 1
+	fi
+}
+
+check_no_network_configuration() {
+	check_no_output "Waiting up to 180 secs for"
+}
+
+wait_for_server_startup() {
+	local expected_log_line="$1"
+	local qemu_logfile="$2"
+	local server_pid="$3"
+	local timeout="$QEMU_TIMEOUT"
+
+	echo "Waiting up to $QEMU_TIMEOUT seconds for server (QEMU process $server_pid) to get started..."
+	while ! grep -q "$expected_log_line" "$qemu_logfile"; do
+		if ! test -d "/proc/$server_pid"; then
+			echo >&2 "Error: QEMU server process $server_pid disappeared."
+			return 1
+		fi
+		timeout=$((timeout - 1))
+		if test "$timeout" -le 0; then
+			echo >&2 "Error: server was not started within $QEMU_TIMEOUT seconds."
+			return 1
+		fi
+		sleep 1
+	done
+	echo "Server startup took $((QEMU_TIMEOUT - timeout)) seconds."
 }
