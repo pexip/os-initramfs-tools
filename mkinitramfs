@@ -21,6 +21,7 @@ Options:
   -c compress	Override COMPRESS setting in initramfs.conf.
   -d confdir	Specify an alternative configuration directory.
   -l level	Override COMPRESSLEVEL setting in initramfs.conf.
+  -m modules	Override MODULES setting in initramfs.conf.
   -k		Keep temporary directory used to make the image.
   -o outfile	Write to outfile.
   -r root	Override ROOT setting in initramfs.conf.
@@ -36,7 +37,7 @@ usage_error()
 	exit 2
 }
 
-OPTIONS=$(getopt -o c:d:hl:ko:r:v --long help -n "$0" -- "$@") || usage_error
+OPTIONS=$(getopt -o c:d:hl:m:ko:r:v --long help,version -n "$0" -- "$@") || usage_error
 
 eval set -- "$OPTIONS"
 
@@ -62,6 +63,10 @@ while true; do
 		compresslevel="$2"
 		shift 2
 		;;
+	-m)
+		modules="$2"
+		shift 2
+		;;
 	-o)
 		outfile="$2"
 		shift 2
@@ -77,6 +82,10 @@ while true; do
 	-v)
 		verbose="y"
 		shift
+		;;
+	--version)
+		echo "initramfs-tools @VERSION@"
+		exit 0
 		;;
 	--)
 		shift
@@ -130,7 +139,7 @@ done
 
 # Check busybox dependency
 if [ "${BUSYBOX}" = "y" ] && [ -z "${BUSYBOXDIR}" ]; then
-	echo >&2 "E: @BUSYBOX_PACKAGES@, version @BUSYBOX_MIN_VERSION@ or later, is required but not installed"
+	echo >&2 "E: @BUSYBOX_PACKAGES@ is required but not installed"
 	exit 1
 fi
 
@@ -179,6 +188,12 @@ if ! command -v "${compress}" >/dev/null 2>&1; then
 	compress=gzip
 fi
 
+# Support packages installing in /lib/ rather than /boot/
+kconfig="/lib/modules/${version}/config-${version}"
+if [ ! -f "$kconfig" ]; then
+	kconfig="/boot/config-${version}"
+fi
+
 # Check that kernel supports selected compressor, and fall back to gzip.
 # Exit if even gzip is not supported.
 case "${compress}" in
@@ -190,15 +205,20 @@ lzop)	kconfig_sym=CONFIG_RD_LZO ;;
 lz4)	kconfig_sym=CONFIG_RD_LZ4 ;;
 zstd)	kconfig_sym=CONFIG_RD_ZSTD ;;
 esac
-while ! grep -q "^$kconfig_sym=y" "/boot/config-${version}"; do
-	if [ "${compress}" = gzip ]; then
-		echo "E: gzip compression ($kconfig_sym) not supported by kernel" >&2
-		exit 1
-	fi
-	echo "W: ${compress} compression ($kconfig_sym) not supported by kernel, using gzip" >&2
-	compress=gzip
-	kconfig_sym=CONFIG_RD_GZIP
-done
+if [ -e "${kconfig}" ]; then
+	while ! grep -q "^$kconfig_sym=y" "${kconfig}"; do
+		if [ "${compress}" = gzip ]; then
+			echo "E: gzip compression ($kconfig_sym) not supported by kernel" >&2
+			exit 1
+		fi
+		echo "W: ${compress} compression ($kconfig_sym) not supported by kernel, using gzip" >&2
+		compress=gzip
+		kconfig_sym=CONFIG_RD_GZIP
+	done
+else
+	echo "W: Kernel configuration ${kconfig} is missing, ${compress} compression" \
+		"support ($kconfig_sym) cannot be checked and is assumed to be available" >&2
+fi
 
 if [ -z "${compresslevel:-}" ]; then
 	compresslevel=${COMPRESSLEVEL:-}
@@ -246,6 +266,7 @@ if [ -d "${outfile}" ]; then
 	exit 1
 fi
 
+MODULES="${modules:-$MODULES}"
 MODULESDIR="/lib/modules/${version}"
 
 if [ ! -e "${MODULESDIR}" ]; then
@@ -258,18 +279,21 @@ fi
 
 # Prepare to clean up temporary files on exit
 DESTDIR=
+__TMPMAINFILES=
+__TMPUNCOMPRESSEDFILES=
 __TMPCPIOGZ=
-__TMPMAINCPIO=
 __TMPEARLYCPIO=
+__MODULES_TO_ADD=
 # shellcheck disable=SC2317
 clean_on_exit() {
 	if [ "${keep}" = "y" ]; then
 		echo "Working files in ${DESTDIR:-<not yet created>}," \
-			"early initramfs in ${__TMPEARLYCPIO:-<not yet created>}," \
-			"main initramfs in ${__TMPMAINCPIO:-<not yet created>} and" \
+			"list of files for main initramfs in ${__TMPMAINFILES:-<not yet created>}," \
+			"list of files for uncompressed initramfs in ${__TMPUNCOMPRESSEDFILES:-<not yet created>}," \
+			"early initramfs in ${__TMPEARLYCPIO:-<not yet created>} and" \
 			"overlay in ${__TMPCPIOGZ:-<not yet created>}"
 	else
-		for path in "${DESTDIR}" "${__TMPCPIOGZ}" "${__TMPMAINCPIO}" "${__TMPEARLYCPIO}"; do
+		for path in "${DESTDIR}" "${__TMPMAINFILES}" "${__TMPUNCOMPRESSEDFILES}" "${__TMPCPIOGZ}" "${__TMPEARLYCPIO}" "${__MODULES_TO_ADD}"; do
 			test -z "${path}" || rm -rf "${path}"
 		done
 	fi
@@ -281,9 +305,11 @@ trap "exit 1" INT TERM	# makes the EXIT trap effective even when killed
 [ -n "${TMPDIR}" ] && [ ! -w "${TMPDIR}" ] && unset TMPDIR
 DESTDIR="$(mktemp -d "${TMPDIR:-/var/tmp}/mkinitramfs_XXXXXX")" || exit 1
 chmod 755 "${DESTDIR}"
+__TMPMAINFILES="$(mktemp "${TMPDIR:-/var/tmp}/mkinitramfs-MAIN_files_XXXXXX")" || exit 1
+__TMPUNCOMPRESSEDFILES="$(mktemp "${TMPDIR:-/var/tmp}/mkinitramfs-UNCOMPRESSED_files_XXXXXX")" || exit 1
 __TMPCPIOGZ="$(mktemp "${TMPDIR:-/var/tmp}/mkinitramfs-OL_XXXXXX")" || exit 1
-__TMPMAINCPIO="$(mktemp "${TMPDIR:-/var/tmp}/mkinitramfs-MAIN_XXXXXX")" || exit 1
 __TMPEARLYCPIO="$(mktemp "${TMPDIR:-/var/tmp}/mkinitramfs-FW_XXXXXX")" || exit 1
+__MODULES_TO_ADD="$(mktemp "${TMPDIR:-/var/tmp}/modules_XXXXXX")" || exit 1
 
 DPKG_ARCH=$(dpkg --print-architecture)
 
@@ -306,6 +332,9 @@ export __TMPCPIOGZ
 
 # Private, used by 'prepend_earlyinitramfs'.
 export __TMPEARLYCPIO
+
+# Private, used by 'manual_add_modules'.
+export __MODULES_TO_ADD
 
 # Create usr-merged filesystem layout, to avoid duplicates if the host
 # filesystem is usr-merged.
@@ -354,9 +383,6 @@ list)
 	auto_add_modules
 	;;
 esac
-
-# Resolve hidden dependencies
-hidden_dep_add_modules
 
 # Add firmware for built-in code
 add_builtin_firmware
@@ -410,6 +436,8 @@ for file in /etc/modprobe.d/*.conf /lib/modprobe.d/*.conf ; do
 	fi
 done
 
+# Copy kernel modules here, because some hooks rely on them being copied
+apply_add_modules || exit $?
 run_scripts /usr/share/initramfs-tools/hooks
 run_scripts "${CONFDIR}"/hooks
 
@@ -418,23 +446,9 @@ for b in $(cd "${DESTDIR}/scripts" && find . -mindepth 1 -type d); do
 	cache_run_scripts "${DESTDIR}" "/scripts/${b#./}"
 done
 
-# decompress modules for boot speed, if possible
-find "${DESTDIR}/${MODULESDIR}" -name '*.ko.*' | while read -r ko; do
-	case "$ko" in
-	*.xz)
-		if ! command -v xz >/dev/null 2>&1; then
-			break
-		fi
-		xz -d "${ko}"
-		;;
-	*.zst)
-		if ! command -v zstd >/dev/null 2>&1; then
-			break
-		fi
-		zstd -q -d --rm "${ko}"
-		;;
-	esac
-done
+apply_add_modules || exit $?
+# Resolve hidden dependencies
+hidden_dep_add_modules
 
 # generate module deps
 depmod -a -b "${DESTDIR}" "${version}"
@@ -460,7 +474,6 @@ fi
 
 [ "${verbose}" = y ] && echo "Building cpio ${outfile} initramfs"
 
-(
 # preserve permissions if root builds the image, see #633582
 [ "$(id -ru)" != 0 ] && cpio_owner_root="-R 0:0"
 
@@ -474,46 +487,70 @@ if [ -n "${SOURCE_DATE_EPOCH}" ]; then
 	cpio_reproducible="--reproducible"
 fi
 
-# work around lack of "set -o pipefail" for the following pipe:
-# cd "${DESTDIR}" && find . | LC_ALL=C sort | cpio --quiet $cpio_owner_root $cpio_reproducible -o -H newc >>"${outfile}" || exit 1
-ec1=1
-ec2=1
-exec 3>&1
-eval "$(
-	# http://cfaj.freeshell.org/shell/cus-faq-2.html
-	exec 4>&1 >&3 3>&-
-	cd  "${DESTDIR}"
+# Read list of files and echo them plus all leading directories.
+# The same directories might be printed multiple times (even with sorted input)!
+add_directories() {
+	local last_dir path dir
+	while read -r path; do
+		dir="${path%/*}"
+		parent="${dir}"
+		while [ "$parent" != "$last_dir" ] && [ "$parent" != "." ]; do
+			echo "$parent"
+			parent="${parent%/*}"
+		done
+		last_dir="$dir"
+		echo "$path"
+	done
+	if [ -n "$last_dir" ]; then
+		echo "."
+	fi
+}
+
+cd  "${DESTDIR}" || exit 1
+
+# work around lack of "set -o pipefail" for pipes.
+# Write exit code to FD 3 in case of a failure to pass it through the pipes.
+{
 	{
-		find . 4>&-; echo "ec1=$?;" >&4
-	} | {
-		LC_ALL=C sort
-	} | {
-		# shellcheck disable=SC2086
-		cpio --quiet $cpio_owner_root $cpio_reproducible -o -H newc 4>&- >"${__TMPMAINCPIO}"
-		echo "ec2=$?;" >&4
-	}
-)"
-if [ "$ec1" -ne 0 ]; then
-	echo "E: mkinitramfs failure find $ec1 cpio $ec2" >&2
-	exit "$ec1"
-fi
-if [ "$ec2" -ne 0 ]; then
-	echo "E: mkinitramfs failure cpio $ec2" >&2
-	exit "$ec2"
-fi
-) || exit 1
+		find . \( ! -type d ! -name '*.zst' ! -name '*.xz' \) -o \( -type d -empty \) ||
+			{ echo "E: mkinitramfs failure main find $?" >&2; echo 1 >&3; exit; }
+	} | add_directories | {
+		LC_ALL=C sort || { echo "E: mkinitramfs failure sort $?" >&2; echo 1 >&3; exit; }
+	} | uniq > "${__TMPMAINFILES}" || { echo "E: mkinitramfs failure uniq $?" >&2; echo 1 >&3; exit; }
+} 3>&1 | { read -r exit_code; exit "${exit_code:-0}"; } || exit $?
 
 {
-if [ -s "${__TMPEARLYCPIO}" ]; then
-	cat "${__TMPEARLYCPIO}" || exit 1
-fi
+	{
+		find . -name '*.zst' -o -name '*.xz' ||
+			{ echo "E: mkinitramfs failure uncompressed find $?" >&2; echo 1 >&3; exit; }
+	} | add_directories | {
+		LC_ALL=C sort || { echo "E: mkinitramfs failure sort $?" >&2; echo 1 >&3; exit; }
+	} | uniq > "${__TMPUNCOMPRESSEDFILES}" || { echo "E: mkinitramfs failure uniq $?" >&2; echo 1 >&3; exit; }
+} 3>&1 | { read -r exit_code; exit "${exit_code:-0}"; } || exit $?
 
-$compress -c "${__TMPMAINCPIO}" ||
-	{ echo "E: mkinitramfs failure $compress $?" >&2; exit 1; }
+{
+	{
+		if [ -s "${__TMPEARLYCPIO}" ]; then
+			cat "${__TMPEARLYCPIO}" || { echo 1 >&3; exit; }
+		fi
 
-if [ -s "${__TMPCPIOGZ}" ]; then
-	cat "${__TMPCPIOGZ}" || exit 1
-fi
-} >"${outfile}" || exit 1
+		if [ -s "${__TMPUNCOMPRESSEDFILES}" ]; then
+			# shellcheck disable=SC2086
+			cpio --quiet $cpio_owner_root $cpio_reproducible -o -H newc -D "${DESTDIR}" <"${__TMPUNCOMPRESSEDFILES}" ||
+				{ echo "E: mkinitramfs failure uncompressed cpio $?" >&2; echo 1 >&3; exit; }
+		fi
+
+		{
+			# shellcheck disable=SC2086
+			cpio --quiet $cpio_owner_root $cpio_reproducible -o -H newc -D "${DESTDIR}" <"${__TMPMAINFILES}" ||
+				{ echo "E: mkinitramfs failure cpio $?" >&2; echo 1 >&3; exit; }
+		} | $compress -c ||
+			{ echo "E: mkinitramfs failure $compress $?" >&2; echo 1 >&3; exit; }
+
+		if [ -s "${__TMPCPIOGZ}" ]; then
+			cat "${__TMPCPIOGZ}" || { echo 1 >&3; exit; }
+		fi
+	} >"${outfile}" || echo $? >&3
+} 3>&1 | { read -r exit_code; exit "${exit_code:-0}"; } || exit $?
 
 exit 0

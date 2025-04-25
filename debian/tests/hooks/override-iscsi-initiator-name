@@ -1,0 +1,19 @@
+#!/bin/sh
+
+PREREQ="iscsi"
+
+prereqs()
+{
+	echo "$PREREQ"
+}
+
+case "$1" in
+prereqs)
+	prereqs
+	exit 0
+	;;
+esac
+
+if test -n "${ISCSI_INITIATOR_NAME-}"; then
+	printf "InitiatorName=%s\n" "$ISCSI_INITIATOR_NAME" > "${DESTDIR}/etc/initiatorname.iscsi"
+fi

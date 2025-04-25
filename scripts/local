@@ -1,4 +1,5 @@
 # Local filesystem mounting			-*- shell-script -*-
+# shellcheck shell=sh
 
 local_top()
 {

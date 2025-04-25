@@ -55,17 +55,11 @@ powerpc|ppc64)
 	    exit 0
 	    ;;
 	esac
-	manual_add_modules windfarm_core
-	manual_add_modules windfarm_cpufreq_clamp
-	manual_add_modules windfarm_lm75_sensor
-	manual_add_modules windfarm_max6690_sensor
-	manual_add_modules windfarm_pid
-	manual_add_modules windfarm_smu_controls
-	manual_add_modules windfarm_smu_sat
-	manual_add_modules windfarm_smu_sensors
+	manual_add_modules windfarm_core windfarm_cpufreq_clamp \
+		windfarm_lm75_sensor windfarm_max6690_sensor windfarm_pid \
+		windfarm_smu_controls windfarm_smu_sat windfarm_smu_sensors
 	;;
 i386|amd64|ia64)
-	manual_add_modules fan
-	manual_add_modules thermal
+	manual_add_modules fan thermal
 	;;
 esac

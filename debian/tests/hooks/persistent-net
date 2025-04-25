@@ -1,0 +1,33 @@
+#!/bin/sh
+
+PREREQ=""
+
+prereqs()
+{
+	echo "$PREREQ"
+}
+
+case "$1" in
+prereqs)
+	prereqs
+	exit 0
+	;;
+esac
+
+persist_net() {
+	name="$1"
+	mac="$2"
+
+	mkdir -p "${DESTDIR}/etc/systemd/network"
+	cat >"${DESTDIR}/etc/systemd/network/10-persistent-${name}.link" <<EOF
+[Match]
+MACAddress=${mac}
+
+[Link]
+Name=${name}
+EOF
+}
+
+persist_net lan0 "52:54:00:65:43:21"
+persist_net lan1 "52:54:00:12:34:56"
+persist_net lan9 "52:54:00:12:33:21"

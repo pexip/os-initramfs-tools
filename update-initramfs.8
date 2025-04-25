@@ -11,6 +11,10 @@ update\-initramfs \- generate an initramfs image
 .RB [ \-v ]
 .RB [ \-b
 .IR directory ]
+.RB [ \-s
+.IR timestamp ]
+.br
+.BR update\-initramfs " " \-\-version
 .br
 .BR update\-initramfs " " \-h
 .SH DESCRIPTION
@@ -61,6 +65,17 @@ the chosen action.
 .TP
 \fB\-b \fI directory
 Set an different bootdir for the image creation.
+
+.TP
+\fB-s \fI timestamp
+This parameter sets a Unix time stamp (seconds since 1970) for the update mode.
+An existing initramfs will only be updated
+if it is not newer than the specified Unix time stamp.
+This parameter will be ignored if set to an empty string.
+
+.TP
+\fB--version\fR
+Print the version information of the underlying initrd generation tool and exit.
 
 .TP
 \fB\-h\fR, \fB--help\fR

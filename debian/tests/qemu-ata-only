@@ -1,5 +1,7 @@
-#!/bin/sh -e
+#!/bin/sh
+set -e
 
+# Note: The qemu machines used on arm64, armhf, ppc64el, and s390x have no IDE
 SUPPORTED_FLAVOURS='amd64 generic'
 ROOTDISK_QEMU_IF=ide
 ROOTDISK_LINUX_NAME=sda
@@ -19,4 +21,6 @@ build_initramfs
 
 build_rootfs_ext2
 
-run_qemu_amd64
+# shellcheck disable=SC2119
+run_qemu
+check_no_network_configuration

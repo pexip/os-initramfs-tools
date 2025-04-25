@@ -10,6 +10,8 @@ mkinitramfs \- low-level tool for generating an initramfs image
 .IR outfile
 .RI [ version ]
 .br
+.BR mkinitramfs " " --version
+.br
 .BR mkinitramfs " " -h
 
 .SH DESCRIPTION
@@ -56,6 +58,13 @@ setting in
 .IR initramfs.conf .
 
 .TP
+\fB\-m \fI modules
+Override the
+.B MODULES
+setting in
+.IR initramfs.conf .
+
+.TP
 \fB\-o \fI outfile
 Write the image to
 .IR outfile .
@@ -75,6 +84,10 @@ Set the verbose mode output.
 \fIversion
 Set the kernel version of the initramfs image
 (defaults to the running kernel).
+
+.TP
+\fB\-\-version\fR
+Display version information and exit.
 
 .TP
 \fB\-h\fR, \fB\-\-help\fR

@@ -1,0 +1,97 @@
+#!/bin/sh
+set -e
+
+SUPPORTED_FLAVOURS='alpha-smp amd64 arm64 armmp parisc loong64 m68k powerpc64 powerpc64le riscv64 s390x sparc64-smp generic'
+. debian/tests/test-common
+
+SOURCEDIR=/usr/lib/initramfs-test-copy-file
+
+mkdir -p "${SOURCEDIR}/dir1"
+printf "1" >"${SOURCEDIR}/dir1/file1"
+ln -s dir1 "${SOURCEDIR}/dir2"
+printf "22" >"${SOURCEDIR}/file2"
+printf "333" >"${SOURCEDIR}/file3"
+
+cat >>"${CONFDIR}/initramfs.conf" <<EOF
+MODULES=list
+BUSYBOX=n
+EOF
+
+cat >"${CONFDIR}/hooks/initramfs-test-copy-file" <<EOF
+#!/bin/sh
+set -e
+
+test "\$1" = prereqs && exit
+
+. /usr/share/initramfs-tools/hook-functions
+
+set -x
+
+# Source named via directory symlink should be symlinked (#1076539)
+copy_file test "${SOURCEDIR}/dir1/file1"
+copy_file test "${SOURCEDIR}/dir2/file1"
+
+# Usr-merged target must be recognised with or without leading slash
+# (#1079276)
+copy_file test "${SOURCEDIR#/usr}/file3" "${SOURCEDIR#/usr/}/file3"
+
+# Target that exists as directory must be treated as directory
+mkdir "\${DESTDIR}/${SOURCEDIR}/dir3"
+copy_file test "${SOURCEDIR}/file2" "${SOURCEDIR}/dir3"
+
+# Target with trailing slash must be treated as directory (#1082647)
+copy_file test "${SOURCEDIR}/file2" "${SOURCEDIR}/dir4/"
+
+# Check combination of #1079276 and #1082647 cases
+copy_file test "${SOURCEDIR#/usr}/file3" "${SOURCEDIR#/usr/}/dir5/"
+EOF
+chmod +x "${CONFDIR}/hooks/initramfs-test-copy-file"
+
+build_initramfs
+lsinitramfs -l "${INITRAMFS}" >"${AUTOPKGTEST_TMP}/listing"
+
+rc=0
+
+check_file() {
+	local ftype="$1"
+	local name="$2"
+	local extra="$3"
+	local size_re='[0-9]*'
+	local tail_re=''
+
+	case "$ftype" in
+	-)
+		# Regular file: extra is size
+		size_re="${extra}"
+		;;
+	l)
+		# Symbolic link: extra is link text
+		size_re="${#extra}"
+		tail_re=" -> $(printf %s "$extra" | sed 's/\./\\./g')"
+		;;
+	esac
+
+	if ! grep -q "^${ftype}......... *[0-9]* root *root *${size_re} ............ ${name#/}${tail_re}$" "${AUTOPKGTEST_TMP}/listing"; then
+		echo >&2 "E: $name did not get copied correctly"
+		rc=1
+	fi
+}
+
+# Check that files, directories, and symlinks were created as expected
+check_file d ${SOURCEDIR}/dir1       -
+check_file - ${SOURCEDIR}/dir1/file1 1
+check_file d ${SOURCEDIR}/dir2       -
+check_file l ${SOURCEDIR}/dir2/file1 ../dir1/file1
+check_file - ${SOURCEDIR}/file3      3
+check_file d ${SOURCEDIR}/dir3       -
+check_file - ${SOURCEDIR}/dir3/file2 2
+check_file d ${SOURCEDIR}/dir4       -
+check_file - ${SOURCEDIR}/dir4/file2 2
+check_file - ${SOURCEDIR}/dir5/file3 3
+
+if [ $rc -ne 0 ]; then
+	echo "I: Initramfs contents:"
+	cat "$AUTOPKGTEST_TMP/listing"
+fi
+
+exit $rc

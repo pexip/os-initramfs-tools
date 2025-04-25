@@ -1,3 +1,263 @@
+initramfs-tools (0.147) unstable; urgency=medium
+
+  [ Ben Hutchings ]
+  * [34f9acd] hook-functions: Add reset drivers when MODULES=dep (Closes:
+    #1027458)
+  * [025ce79] unmkinitramfs: Create temporary directory for initramfs
+    parts
+  * [25b0c61] unmkinitramfs: Fix detection of EOF marker
+  * [ca1a68b] unmkinitramfs: Restore split to "early" and "main"
+    subdirectories (Closes: #1100008)
+  * [bbbe1d3] unmkinitramfs.8: Update and expand description of multi-
+    archive handling
+
+  [ Chris Hofstaedtler ]
+  * [297a9e2] hook-functions: avoid aborting in chroots
+  * [319cdc9] Tighten /dev/pts permissions (Closes: #1095991)
+
+  [ Scott Moser ]
+  * [cec12d7] hook-functions: add squashfs driver (LP: #1501834)
+
+  [ Benjamin Drung ]
+  * [a6884dc] test: let run_qemu* take extra kernel parameters as single
+    parameter
+  * [5401bf3] test: support setting a disk label in build_fs_ext2
+  * [ab1fe4e] test-common: introduce intermediate
+    _run_qemu_default_devices
+  * [20c564a] Add qemu-net-iscsi autopkgtest (LP: #2091904)
+  * [716491a] mkinitramfs: add --version parameter
+  * [65166a6] update-initramfs: add --version parameter
+  * [2334de3] kernel/postinst.d: check for correct update-initramfs
+    provider
+  * [7ef4755] Fix spelling mistakes in d/changelog
+  * [3ed4077] hook-functions: Move UFS storage drivers to block class (LP:
+    #2081020)
+  * [19b85a5] Filter block kernel modules by symbol regex from dracut (LP:
+    #2031841)
+  * [4069428] update-initramfs: add -s parameter (LP: #1466965)
+  * [7f2ed35] Avoid updating the initramfs twice for some cases (LP:
+    #1466965)
+  * [dad2c90] test: run quick copy-file autopkgtest first
+  * [32aa743] Bump Standards-Version to 4.7.2
+
+ -- Ben Hutchings <benh@debian.org>  Fri, 28 Mar 2025 02:07:15 +0100
+
+initramfs-tools (0.146) unstable; urgency=medium
+
+  [ Alper Nebi Yasak ]
+  * [6487f6e] hook-functions: Add soc and extcon drivers
+  * [99bea09] hook-functions: Add rpmsg and hwspinlock drivers
+  * [7d1c4b4] hook-functions: Add interconnect drivers
+  * [cf40492] hook-functions: Add mailbox drivers
+  * [6caf9cd] hook-functions: Add memory drivers
+  * [82c266d] hook-functions: Add nvmem drivers
+  * [6269d10] hook-functions: Add power modules
+  * [ee89884] hook-functions: Add spmi modules
+  * [4410741] hook-functions: Add qrtr driver
+  * [56e9fd6] hook-functions: Add devfreq drivers
+  * [2eb8e0e] hook-functions: Add dma drivers
+  * [91a439b] hook-functions: Add watchdog drivers
+  * [ada64b7] hook-functions: Add usb/typec drivers
+  * [cb730ef] hook-functions: Add tty/serial drivers
+  * [7033153] hook-functions: Add input/serio drivers
+  * [c8a24d8] hook-functions: Add platform/chrome drivers
+  * [bc902ab] hook-functions: Handle msm hidden dependency on qrtr
+  * [508c23b] hook-functions: Add msm to fb modules list
+
+  [ Dmitry Baryshkov ]
+  * [7328860] hook-functions: add missing module dependencies for Qualcomm
+    platforms
+
+  [ Ben Hutchings ]
+  * [140c572] hook-functions: Expand documentation of copy_exec and
+    copy_file
+  * [765db02] hook-functions: Restore copy_file's handling of target
+    ending in slash (Closes: #1082647)
+  * [d5c2430] hook-functions: Exclude usr-merge symlinks in copy_file
+    (Closes: #1088959)
+  * [6adf789] autopkgtest: Add tests for copy_file function
+  * [59d8726] functions: Define list_filter_out function for filtering
+    comma-sep lists
+  * [c1ad6a5] init: Filter 'tmpfs' out of $ROOTFSTYPE
+  * [10bcd21] tests: Add e2fsprogs to dependencies
+
+  [ Benjamin Drung ]
+  * [81fd41f] Put compressed kernel modules and firmware in an
+    uncompressed cpio (LP: #2028567)
+  * [cb06181] unmkinitramfs: use directory names 'cpio1', 'cpio2', etc.
+  * [fb0b40d] Declare breaking miniramfs 1.0.2 and older
+  * [137d8a9] Drop obsolete shellcheck overrides
+  * [cc661aa] Filter net kernel modules by symbol regexp from dracut (LP:
+    #2031841)
+  * [687cff2] Explicitly call "set -e" instead of specifying on shebang
+  * [5eda205] netinfo_to_resolv_conf: clear variables between sourcing
+  * [b55854d] netinfo_to_resolv_conf: add net_file to local variables
+  * [df2b4b3] hook-functions: make copy_libgcc to not take any parameters
+    (LP: #2085157)
+  * [370b433] test: log commands that produce output on stdout
+  * [ddec7a3] Mark debian/tests/test-common as sh script
+  * [9333111] tests: fix shellcheck warning "Declare and assign separately
+    to ..."
+  * [db53479] tests: Replace 'echo -n' by printf
+  * [08ec63c] tests: fix shellcheck warning "variable appears unused"
+  * [32630e9] tests: fix shellcheck info "read without -r will mangle
+    backslashes"
+  * [2c746f1] test: make prepare_network_dumping_rootfs take no parameters
+  * [84115f9] test: silence incorrect shellcheck SC2119
+  * [a83ddc2] test: fix checking output / initrd content
+  * [3ad3f72] d/salsa-ci.yml: include tests in shellcheck
+
+  [ Jeffery To ]
+  * [7b10938] Fix resume device type check
+
+ -- Ben Hutchings <benh@debian.org>  Sun, 02 Mar 2025 17:46:36 +0100
+
+initramfs-tools (0.145) unstable; urgency=medium
+
+  * [f1db745] autopkgtest: Run tests as root (Closes: #1078168)
+  * [984bdc7] hook-functions: copy_file: Canonicalise target filename
+    (Closes: #1079276)
+
+ -- Ben Hutchings <benh@debian.org>  Thu, 22 Aug 2024 17:12:25 +0200
+
+initramfs-tools (0.144) unstable; urgency=medium
+
+  [ Benjamin Drung ]
+  * [d730a39] Replace copy_modules_dir by manual_add_modules calls
+  * [fbed3de] autopkgtest: Enable KVM if available
+  * [2033d83] mkinitramfs: Use pipefail for creating final initrd.img file
+  * [ce03a2e] mkinitramfs: Do not store intermediate main cpio archive
+  * [135c59c] install hid-multitouch module for Surface Pro 4 Keyboard
+    (LP: #1772094)
+  * [a3428db] fsck: Mention file system name in failed identification
+    warning
+  * [6fc11ff] Move shellcheck configuration to .shellcheckrc
+  * [8510fab] Check shell scripts for POSIX sh compliance
+
+  [ Alper Nebi Yasak ]
+  * [f495e29] hook-functions: auto_add_modules: Add onboard_usb_hub,
+    onboard_usb_dev
+  * [5a1ae97] hook-functions: add_loaded_modules: Walk bound devices for
+    suppliers
+  * [852334e] d/gbp.conf: Set gbp-dch options matching existing changelog
+    entries
+  * [a89788e] mkinitramfs: Add -m argument to override MODULES setting
+
+  [ Ben Hutchings ]
+  * [b641a97] hook_functions: Fix copy_file with source including a
+    directory symlink
+  * [d3150d8] autopkgtest: Fix name of ppc64el kernel flavour
+  * [1e2fe3f] autopkgtest: Fix test failure when built-in drivers request
+    firmware
+  * [347c542] mkinitramfs, hook-functions: Exit with error if dracut-
+    install fails (Closes: #1079066)
+
+ -- Ben Hutchings <benh@debian.org>  Thu, 22 Aug 2024 01:59:34 +0200
+
+initramfs-tools (0.143.1) unstable; urgency=medium
+
+  * Upload to unstable
+
+ -- Ben Hutchings <benh@debian.org>  Sun, 28 Jul 2024 20:03:20 +0200
+
+initramfs-tools (0.143) experimental; urgency=medium
+
+  [ Gioele Barabucci ]
+  * [4ae8280] d/initramfs-tools.maintscripts: Remove code for ancient versions
+
+  [ наб ]
+  * [5774cc3] Respect fw_path_para in add_firmware()
+  * [c9fa064] Handle compressed firmware in add_firmware()
+  * [1aa6118] Support ZSTD-compressed firmware in add_firmware()
+
+  [ Benjamin Drung ]
+  * [3d29bf9] Configure /etc/resolv.conf and persist hostname
+  * [5339f25] Add unit tests for netinfo_to_resolv_conf
+  * [78b408c] Support "set -u"
+  * [124d98b] test: Fix too small ext2 block count
+  * [c8d88a5] test-common: Use one common temporary directory
+  * [b33e6c8] Update lintian override to format for lintian 2.116.3
+  * [613c4f5] Convert debian/copyright to machine-readable format
+  * [ad808f4] Switch to debhelper 13
+  * [5908b3c] Bump Standards-Version to 4.7.0
+  * [0c23673] Drop Breaks/Conflicts that predate Debian 10 "buster" and Ubuntu
+    20.04 "focal"
+  * [2239b0e] test-common: Support "set -u"
+  * [680698c] test-common: Wrap long qemu-system-x86_64 line
+  * [7bcc5ae] autopkgtest: Explicitly specify supported architectures
+  * [c25336f] autopkgtest: Rely on linux-image-generic alias on Debian
+  * [028d6e0] autopkgtest: Group tests with identical dependencies
+  * [8e8554b] test: Add random number generator to qemu
+  * [ea3e090] Run autopkgtest on more architectures
+  * [1f6bfe7] test: Call qemu with -nodefaults
+  * [5171920] test: log build_initramfs call
+  * [9a10673] persist_hostname: fix missing hostname command
+  * [e114943] mkinitramfs: Simplify pipefail implementation
+  * [dbd1a56] copy_exec: ignore ldd output lines not starting with a tab
+    (LP: #2046570)
+  * [995a33c] Run wrap-and-sort
+  * [c9d970c] initramfs-tools-core: drop support for upgrading from < 0.138
+  * [f9dbdc6] test: Check that the network is not configured
+  * [3c02697] test: create /lib64 to /usr/lib64 symlink as well
+  * [d75a58b] Bring up networking if ip is specified on cmdline
+    (Closes: #789067) (LP: #1463846)
+  * [05692dc] Merge consecutive manual_add_modules calls into one
+  * [05ea8a5] Skip compression support check if /boot/config-${version} is
+    missing (LP: #2018171)
+  * [b3e8cc4] Use dracut-install in manual_add_modules (LP: #2031185)
+  * [e6ad401] mkinitramfs: indent code that writes the outfile
+  * [215a713] hook-functions: Shorten add_firmware
+  * [b83a651] Add myself to debian/copyright
+  * [946c3c9] refactor: Introduce debian/tests/run-qemu
+  * [0cefa93] hook-utils: fix tab/spaces indentation
+  * [ead1b47] mkinitramfs: Resolve hidden dependencies after all modules were
+    copied
+  * [9a297f5] reduce number of dracut-install calls (LP: #2065180)
+
+  [ Luca Boccassi ]
+  * [90addd0] Check for the kconfig in /lib/modules/ too
+
+  [ szubersk ]
+  * [67bddc4] Fix/ignore ShellCheck findings
+  * [9da9969] Silence unnecessary `ln -f` warning
+
+  [ Alper Nebi Yasak ]
+  * [88dc091] hook-functions: Don't walk graphics modules if corebootfb is
+    available
+  * [1eb6511] hook-functions: dep_add_modules: Properly include panel drivers
+  * [3c86dba] hook-functions: sys_walk_mod_add: Add devlink suppliers as
+    dependencies
+  * [85239a1] hook-functions: auto_add_modules: Add modules for MT8173/8183
+    Chromebooks
+  * [36c7300] hook-functions: dep_add_modules: Include mipi-dsi panel drivers
+  * [465ae6b] hook-functions: dep_add_modules: Generalise wildcard for panel
+    drivers
+  * [03d196f] test: Increase QEMU timeout to 120s
+  * [8aec852] hook_functions: dep_add_modules: Use heuristics for a generic
+    framebuffer
+
+  [ Aron Xu ]
+  * [d7b6cec] hook-functions: return from dep_add_modules_mount() for zfs
+    (Closes: #934736)
+
+  [ Adam Vodopjan ]
+  * [fbc178e] unmkinitramfs: add count_bytes iflag in a dd call
+
+  [ Ben Hutchings ]
+  * [8801fda] debian/tests/test-common: Update klibc.so installation for
+    /usr-move
+  * [ff983a1] Add myself to debian/copyright
+
+  [ Paul Aurich ]
+  * [13b88ca] scripts/functions: Don't die if configure_networking times out
+    (Closes: #1025730)
+
+  [ Arnaud Rebillout ]
+  * [8f2f49e] Add hyper-keyboard module, needed to enter LUKS password in
+    Hyper-V (Closes: #1028511)
+
+ -- Ben Hutchings <benh@debian.org>  Sat, 01 Jun 2024 22:54:45 +0200
+
 initramfs-tools (0.142+pexip24u4+deb12u1) pexip; urgency=medium
 
   * New upstream release

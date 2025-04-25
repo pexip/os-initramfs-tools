@@ -1,23 +1,96 @@
-Tests: amd64-klibc
-Depends: @, qemu-system-x86, linux-image-amd64 | linux-image-generic:amd64, klibc-utils, genext2fs, zstd
-Restrictions: skip-not-installable
+Tests: copy-file
+Restrictions: needs-root, breaks-testbed, skip-not-installable, superficial, allow-stderr
+Depends: linux-image-generic, zstd, @
 
-Tests: amd64-busybox
-Depends: @, qemu-system-x86, linux-image-amd64 | linux-image-generic:amd64, klibc-utils, busybox | busybox-initramfs, genext2fs, zstd
-Restrictions: skip-not-installable
+Tests: qemu-klibc
+Architecture: amd64 armhf s390x
+Restrictions: needs-root, breaks-testbed
+Depends: e2fsprogs,
+         genext2fs,
+         ipxe-qemu,
+         klibc-utils,
+         linux-image-generic,
+         qemu-efi-arm [armhf],
+         qemu-kvm,
+         zstd,
+         @
 
-Tests: amd64-ata-only
-Depends: @, qemu-system-x86, linux-image-amd64 | linux-image-generic:amd64, klibc-utils, genext2fs, zstd
-Restrictions: skip-not-installable
+Tests: qemu-busybox
+Architecture: amd64 armhf s390x
+Restrictions: needs-root, breaks-testbed
+Depends: busybox | busybox-initramfs,
+         e2fsprogs,
+         genext2fs,
+         ipxe-qemu,
+         klibc-utils,
+         linux-image-generic,
+         qemu-efi-arm [armhf],
+         qemu-kvm,
+         zstd,
+         @
 
-Tests: amd64-virtio-only
-Depends: @, qemu-system-x86, linux-image-amd64 | linux-image-generic:amd64, klibc-utils, genext2fs, zstd
-Restrictions: skip-not-installable
+Tests: qemu-ata-only
+Architecture: amd64
+Restrictions: needs-root, breaks-testbed
+Depends: e2fsprogs,
+         genext2fs,
+         klibc-utils,
+         linux-image-generic,
+         qemu-kvm,
+         zstd,
+         @
 
-Tests: amd64-separate-usr
-Depends: @, qemu-system-x86, linux-image-amd64 | linux-image-generic:amd64, klibc-utils, genext2fs, zstd
-Restrictions: skip-not-installable
+Tests: qemu-virtio-only qemu-separate-usr qemu-panic-shell
+Architecture: amd64 arm64 armhf ppc64el s390x
+Restrictions: needs-root, breaks-testbed
+Depends: e2fsprogs,
+         genext2fs,
+         ipxe-qemu,
+         klibc-utils,
+         linux-image-generic,
+         qemu-efi-aarch64 [arm64],
+         qemu-efi-arm [armhf],
+         qemu-kvm,
+         seabios [ppc64el],
+         zstd,
+         @
 
-Tests: amd64-panic-shell
-Depends: @, qemu-system-x86, linux-image-amd64 | linux-image-generic:amd64, klibc-utils, genext2fs, zstd
-Restrictions: skip-not-installable
+Tests: qemu-net
+Architecture: amd64 arm64 armhf ppc64el s390x
+Restrictions: needs-root, breaks-testbed
+Depends: e2fsprogs,
+         genext2fs,
+         iproute2,
+         ipxe-qemu,
+         klibc-utils,
+         linux-image-generic,
+         procps,
+         python3,
+         qemu-efi-aarch64 [arm64],
+         qemu-efi-arm [armhf],
+         qemu-kvm,
+         seabios [ppc64el],
+         zstd,
+         @
+
+Tests: qemu-net-iscsi
+Architecture: amd64 arm64 armhf ppc64el s390x
+Restrictions: breaks-testbed, needs-root
+Depends: busybox | busybox-initramfs,
+         dnsmasq,
+         e2fsprogs,
+         genext2fs,
+         iproute2,
+         ipxe-qemu,
+         klibc-utils,
+         linux-image-generic,
+         open-iscsi,
+         procps,
+         python3,
+         qemu-efi-aarch64 [arm64],
+         qemu-efi-arm [armhf],
+         qemu-kvm,
+         seabios [ppc64el],
+         tgt,
+         zstd,
+         @

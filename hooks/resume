@@ -24,7 +24,8 @@ if [ -n "$RESUME" ] && [ "$RESUME" != auto ]; then
 		exit 0
 	fi
 	if resume_dev_node="$(resolve_device "$RESUME")" && \
-	   blkid -p -n swap "$resume_dev_node" >/dev/null 2>&1; then
+	   resume_dev_type=$(blkid -p -s TYPE -o value "$resume_dev_node") && \
+	   [ "$resume_dev_type" = swap ]; then
 		exit 0
 	fi
 

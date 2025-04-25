@@ -1,0 +1,178 @@
+#!/bin/sh
+set -eu
+
+# Test the initramfs iSCSI configuration with a dnsmasq server.
+
+SUPPORTED_FLAVOURS='amd64 arm64 armmp powerpc64le s390x generic'
+ROOTDISK_QEMU_IF=virtio
+ROOTDISK_LINUX_NAME=vda
+. debian/tests/test-common
+SERVER_QEMU_LOG="${BASEDIR}/server.log"
+SERVER_QEMU_PID="${BASEDIR}/server.pid"
+
+build_server_rootfs_ext2() {
+	local root_disk="$1"
+	local root_dir="${BASEDIR}/server-rootdir"
+	echo "I: Build server rootfs in $root_dir..."
+	for subdir in "" etc dev proc run sys usr usr/bin usr/lib usr/lib64 usr/sbin tmp var; do
+		mkdir "${root_dir}/${subdir}"
+	done
+	for subdir in bin lib lib64 sbin; do
+		ln -s "usr/$subdir" "${root_dir}/${subdir}"
+	done
+	# /var/run symlink needed for tgtd
+	ln -s /run "${root_dir}/var/run"
+	echo "root:x:0:0:root:/root:/bin/sh" > "${root_dir}/etc/passwd"
+	echo "root:x:0:" > "${root_dir}/etc/group"
+	cat >"${root_dir}/sbin/init" <<EOF
+#!/bin/sh
+set -eu
+
+info() {
+	echo "[\$(cut -d ' ' -f 1 /proc/uptime)] I: \$*"
+}
+
+die() {
+	echo "[\$(cut -d ' ' -f 1 /proc/uptime)] Error: /sbin/init terminated with signal \$1"
+	reboot -f
+}
+
+trap "die INT" INT
+trap "die TERM" TERM
+trap "die EXIT" EXIT
+info "Executing /sbin/init from server root fs"
+echo server > /proc/sys/kernel/hostname
+
+ip link set up dev lan9
+ip addr add 10.0.7.1/24 dev lan9
+ip addr add fc07::1/64 dev lan9
+
+info "ip addr"
+ip addr
+info "ip route"
+ip route
+info "ip -6 route"
+ip -6 route
+
+info "ls -l /dev/disk/by-path"
+ls -l /dev/disk/by-path
+
+mount -t tmpfs tmpfs /tmp
+
+info "Starting tgtd..."
+tgtd -f &
+while ! tgtadm --lld iscsi --mode target --op show > /dev/null 2>&1; do
+	info "Waiting for tgtd startup to finish..."
+	sleep 1
+done
+info "Configuring iSCSI targets..."
+tgtadm --lld iscsi --mode target --op new --tid 1 --targetname iqn.1993-08.org.debian:01:target0
+tgtadm --lld iscsi --mode logicalunit --op new --tid 1 --lun 1 -b /dev/vdb
+tgtadm --lld iscsi --mode target --op bind --tid 1 -I 10.0.7.30
+tgtadm --lld iscsi --mode target --op bind --tid 1 -I fc07::beef
+
+info "Starting dnsmasq..."
+dnsmasq --log-debug
+EOF
+	cat >"${root_dir}/etc/dnsmasq.conf" <<EOF
+dhcp-leasefile=/tmp/dnsmasq.leases
+keep-in-foreground
+log-facility=-
+no-hosts
+no-resolv
+user=root
+group=root
+pid-file=
+
+enable-ra
+dhcp-range=10.0.7.100,10.0.7.150
+dhcp-range=fc07::a0,fc07::ef
+domain=test
+dhcp-option=option6:domain-search,example.com,example
+dhcp-option=option:mtu,9000
+
+# lan0
+dhcp-host=52:54:00:65:43:21,10.0.7.30
+dhcp-host=id:00:03:00:01:52:54:00:65:43:21,[fc07::beef],pizza
+EOF
+	chmod a+x "${root_dir}/sbin/init"
+
+	. /usr/share/initramfs-tools/hook-functions
+	! test -e /usr/lib/initramfs-tools/bin || busybox_dir=/usr/lib/initramfs-tools/bin
+	verbose=y DESTDIR="$root_dir" copy_exec "${busybox_dir-/usr/bin}/busybox" /usr/bin/busybox
+	for command in $("${busybox_dir-/usr/bin}/busybox" --list | grep -v busybox); do
+		ln -s busybox "${root_dir}/usr/bin/$command"
+	done
+	for binary in /sbin/dnsmasq /usr/sbin/tgtd /usr/sbin/tgtadm; do
+		verbose=y DESTDIR="$root_dir" copy_exec "$binary"
+	done
+
+	build_fs_ext2 "${root_dir}" "${root_disk}"
+}
+
+clean_up() {
+	if test -f "${SERVER_QEMU_PID}"; then
+		server_qemu_pid=$(cat "${SERVER_QEMU_PID}")
+		echo "Clean up: Killing server qemu process $server_qemu_pid..."
+		kill "$server_qemu_pid" || true
+	fi
+	if test -e "${SERVER_QEMU_LOG}"; then
+		echo ">>>>>>>>>>>>>>>>>>>> server qemu log >>>>>>>>>>>>>>>>>>>>"
+		cat "${SERVER_QEMU_LOG}"
+		echo "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"
+	fi
+}
+
+trap clean_up INT TERM EXIT
+
+cat >>"${CONFDIR}/initramfs.conf" <<EOF
+MODULES=list
+BUSYBOX=n
+FSTYPE=ext2
+EOF
+cat >"${CONFDIR}/modules" <<EOF
+ext2
+sd_mod
+virtio_blk
+virtio_net
+virtio_pci
+EOF
+for hook in drop-hostname override-iscsi-initiator-name persistent-net; do
+	install -m 755 "debian/tests/hooks/$hook" "${CONFDIR}/hooks/$hook"
+done
+export ISCSI_INITIATOR_NAME="iqn.1993-08.org.debian:01:initiator0"
+build_initramfs
+
+prepare_network_dumping_rootfs
+build_fs_ext2 "${ROOTDIR}" "${ROOTDISK}" rootdev
+
+build_server_rootfs_ext2 "${BASEDIR}/server.raw"
+run_qemu_in_background "${BASEDIR}/server.raw" "${SERVER_QEMU_PID}" "${SERVER_QEMU_LOG}" \
+	-drive "file=${ROOTDISK},if=${ROOTDISK_QEMU_IF},media=disk,format=raw"
+
+wait_for_server_startup "Starting dnsmasq..." "$SERVER_QEMU_LOG" "$(cat "${SERVER_QEMU_PID}")"
+
+EXPECTED_DHCP_LAN0="
+DEVICE='lan0'
+PROTO='dhcp'
+IPV4ADDR='10.0.7.30'
+IPV4BROADCAST='10.0.7.255'
+IPV4NETMASK='255.255.255.0'
+IPV4GATEWAY='10.0.7.1'
+IPV4DNS0='10.0.7.1'
+HOSTNAME=''
+DNSDOMAIN='test'
+ROOTSERVER='10.0.7.1'
+filename=''
+DOMAINSEARCH=''
+"
+
+# Test root=iscsi with IPv4 address
+run_qemu_diskless_with_socket_network "root=iscsi:10.0.7.1:::1:iqn.1993-08.org.debian:01:target0"
+check_output "Begin: Waiting up to 180 secs for any network device to become available"
+./debian/tests/check-log "${OUTPUT}" has_no_running_processes \
+	has_no_hostname \
+	has_interface_mtu lan0 9000 \
+	has_ipv4_addr "10\.0\.7\.30/24" "lan0" \
+	has_ipv4_default_route "10\.0\.7\.1" "lan0" \
+	has_net_conf 1 "/run/net-lan0.conf=${EXPECTED_DHCP_LAN0}"

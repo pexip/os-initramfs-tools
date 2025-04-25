@@ -1,0 +1,23 @@
+#!/bin/sh
+set -e
+
+# The qemu machines on arm64 and ppc64el are too slow for MODULES=most.
+SUPPORTED_FLAVOURS='amd64 armmp s390x generic'
+. debian/tests/test-common
+
+cat >>"${CONFDIR}/initramfs.conf" <<EOF
+MODULES=most
+BUSYBOX=n
+FSTYPE=ext2
+EOF
+build_initramfs
+! lsinitramfs "${INITRAMFS}" | grep -qw busybox || { echo "Error: busybox found in ${INITRAMFS}!" >&2; exit 1; }
+
+build_rootfs_ext2
+
+# shellcheck disable=SC2119
+run_qemu
+check_no_network_configuration
+
+# Check that fsck ran
+grep -q "^/dev/${ROOTDISK_LINUX_NAME}: clean," "${OUTPUT}"
