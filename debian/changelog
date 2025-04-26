@@ -1,3 +1,22 @@
+initramfs-tools (0.142+deb12u3) bookworm; urgency=medium
+
+  * Re-upload with clean debian directory
+
+ -- Ben Hutchings <benh@debian.org>  Sat, 26 Apr 2025 22:00:24 +0200
+
+initramfs-tools (0.142+deb12u2) bookworm; urgency=medium
+
+  * [37a6e9e] hook-functions: Expand documentation of copy_exec and copy_file
+  * [31c50bc] hook-functions: Restore copy_file's handling of target ending in
+    slash (Closes: #1082647)
+  * [d6d1883] hook-functions: Exclude usr-merge symlinks in copy_file
+    (Closes: #1088959)
+  * [38cf275] autopkgtest: Add tests for copy_file function
+  * [065a03f] hook-functions: Add reset drivers when MODULES=dep
+    (Closes: #1027458)
+
+ -- Ben Hutchings <benh@debian.org>  Thu, 24 Apr 2025 17:45:07 +0200
+
 initramfs-tools (0.142+deb12u1) bookworm; urgency=medium
 
   [ Ben Hutchings ]

@@ -21,3 +21,7 @@ Restrictions: skip-not-installable
 Tests: amd64-panic-shell
 Depends: @, qemu-system-x86, linux-image-amd64 | linux-image-generic:amd64, klibc-utils, genext2fs, zstd
 Restrictions: skip-not-installable
+
+Tests: copy-file
+Restrictions: needs-root, breaks-testbed, skip-not-installable, superficial, allow-stderr
+Depends: linux-image-generic, zstd, @
