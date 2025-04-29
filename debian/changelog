@@ -1,3 +1,9 @@
+initramfs-tools (0.147+pexip25u1) pexip-trixie; urgency=medium
+
+  * Initial trixie build
+
+ -- Mark Hymers <mark.hymers@pexip.com>  Tue, 29 Apr 2025 22:34:11 +0100
+
 initramfs-tools (0.147) unstable; urgency=medium
 
   [ Ben Hutchings ]
