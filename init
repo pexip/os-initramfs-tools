@@ -76,6 +76,10 @@ export fastboot=n
 export forcefsck=n
 export fsckfix=
 
+# Force output to /dev/kmsg, so that we'll see stuff on the console
+# and later in syslog. Can be overridden using "debug" on the command
+# line, see below.
+log_output=/dev/kmsg
 
 # Bring in the main config
 . /conf/initramfs.conf
@@ -219,6 +223,13 @@ maybe_break top
 run_scripts /scripts/init-top
 
 maybe_break modules
+
+# Turn off rate-limiting for us when writing to /dev/kmsg. Only works
+# *after* the "modules" call above. Now we'll see things like fsck and
+# growroot output on all the consoles and in syslog.
+echo on > /proc/sys/kernel/printk_devkmsg
+_log_msg "Starting initramfs logging via /dev/kmsg"
+
 [ "$quiet" != "y" ] && log_begin_msg "Loading essential drivers"
 [ -n "${netconsole}" ] && /sbin/modprobe netconsole netconsole="${netconsole}"
 load_modules

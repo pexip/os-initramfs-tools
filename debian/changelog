@@ -1,3 +1,10 @@
+initramfs-tools (0.142+pexip24u5+deb12u1) pexip; urgency=medium
+
+  * Force initramfs logging to /dev/kmsg by default, and turn off
+    ratelimiting there.
+
+ -- Steve McIntyre <steve.mcintyre@pexip.com>  Thu, 01 May 2025 15:23:07 +0100
+
 initramfs-tools (0.142+pexip24u4+deb12u1) pexip; urgency=medium
 
   * New upstream release
