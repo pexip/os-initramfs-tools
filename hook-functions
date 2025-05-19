@@ -153,12 +153,28 @@ add_builtin_firmware()
 	done
 }
 
-# $1 = file type (for logging)
-# $2 = file to copy to initramfs
-# $3 (optional) Name for the file on the initramfs
-# Location of the image dir is assumed to be $DESTDIR
-# If the target exists, we leave it and return 1.
-# On any other error, we return >1.
+# Copy a file to the initramfs:
+# $1 = file type, for debug logging
+# $2 = source file name
+# $3 (optional) = target file or directory name in the initramfs
+#
+# * If the target is not specified, it defaults to the source file
+#   name.
+# * If the target is specified and exists as a directory under
+#   $DESTDIR or ends in a slash, the basename of the source is
+#   appended to it.
+#
+# The target file's containing directories are created if necessary.
+#
+# If the source file name includes a symlink, other than usr-merge
+# symlinks, and the canonical name of the source is not the same as
+# the target, the source file is copied to its canonical name in the
+# initramfs and the target is created as a symlink.
+#
+# Returns:
+# * If the file was copied successfully, 0
+# * If the target file already existed, 1
+# * On error, >1
 copy_file() {
 	local type src target link_target
 
@@ -168,7 +184,7 @@ copy_file() {
 
 	[ -f "${src}" ] || return 2
 
-	if [ -d "${DESTDIR}/${target}" ]; then
+	if [ -d "${DESTDIR}/${target}" ] || [ "${target%/}" != "$target" ]; then
 		target="${target}/${src##*/}"
 	fi
 
@@ -176,7 +192,12 @@ copy_file() {
 	# will work
 	target="$(realpath -ms "/${target}")" || return 2
 
-	# Canonicalise usr-merged target directories
+	# Canonicalise usr-merged directories
+	case "${src}" in
+	/bin/* | /lib* | /sbin/*)
+		[ "$(readlink -f /bin)" = /usr/bin ] && src="/usr${src}"
+		;;
+	esac
 	case "${target}" in
 	/bin/* | /lib* | /sbin/*) target="/usr${target}" ;;
 	esac
@@ -219,10 +240,16 @@ copy_file() {
 	cp -pP "${src}" "${DESTDIR}/${target}" || return $(($? + 1))
 }
 
-# $1 = executable/shared library to copy to initramfs, with dependencies
-# $2 (optional) Name for the file on the initramfs
-# Location of the image dir is assumed to be $DESTDIR
-# We never overwrite the target if it exists.
+# Copy an executable or shared library to the initramfs:
+# $1 = source file name
+# $2 (optional) = target file or directory name in the initramfs
+#
+# The source and all its shared library dependencies are copied
+# using copy_file.
+#
+# Returns:
+# * If the files were copied successfully or already exited, 0
+# * On error, >0
 copy_exec() {
 	local src target x nonoptlib ret
 
@@ -528,11 +555,12 @@ dep_add_modules()
 		class_add_modules "$class"
 	done
 
-	# clk, USB-PHY and pinctrl devices are outside the device model (!) so
-	# match loaded modules by name
+	# clk, USB-PHY, pinctrl and reset devices are outside the device
+	# model (!) so match loaded modules by name
 	add_loaded_modules 'clk[-_]*'
 	add_loaded_modules 'phy[-_]*'
 	add_loaded_modules 'pinctrl[-_]*'
+	add_loaded_modules 'reset[-_]*'
 
 	# Sys walk keyboards.  We identify keyboards as input devices
 	# that can generate at least key events 1-31; udev has the

@@ -21,6 +21,7 @@ fi
 CONFDIR="$(mktemp -d)"
 cp conf/initramfs.conf "${CONFDIR}/initramfs.conf"
 echo "RESUME=none" >>"${CONFDIR}/initramfs.conf"
+mkdir "${CONFDIR}/hooks"
 touch "${CONFDIR}/modules"
 mkdir "${CONFDIR}/scripts"
 
