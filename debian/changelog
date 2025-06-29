@@ -1,3 +1,36 @@
+initramfs-tools (0.148.3) unstable; urgency=medium
+
+  [ Benjamin Drung ]
+  * [e3f4fb4] Revert "Avoid updating the initramfs twice for some cases"
+    (Closes: #1108204)
+
+ -- Ben Hutchings <benh@debian.org>  Sun, 29 Jun 2025 14:08:36 +0200
+
+initramfs-tools (0.148.2) unstable; urgency=medium
+
+  [ Benjamin Drung ]
+  * [3becdb7] Add missing Breaks to initramfs-tools-bin (for moved
+    unmkinitramfs)
+
+  [ Bastian Blank ]
+  * [2246945] Re-add s390 specific scsi drivers (Closes: #1107689)
+
+ -- Ben Hutchings <benh@debian.org>  Fri, 13 Jun 2025 00:55:37 +0200
+
+initramfs-tools (0.148.1) unstable; urgency=medium
+
+  * No-change source upload to allow propagation to testing
+
+ -- Ben Hutchings <benh@debian.org>  Wed, 28 May 2025 20:21:18 +0200
+
+initramfs-tools (0.148) unstable; urgency=medium
+
+  * [a797b42] unmkinitramfs: Rewrite in C to make it acceptably fast
+  * [9e37d8b] Move unmkinitramfs to new initramfs-tools-bin package
+  * [49f3bba] test: Add autopkgtest case for unmkinitramfs
+
+ -- Ben Hutchings <benh@debian.org>  Wed, 28 May 2025 19:09:21 +0200
+
 initramfs-tools (0.147) unstable; urgency=medium
 
   [ Ben Hutchings ]

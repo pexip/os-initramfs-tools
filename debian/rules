@@ -14,6 +14,7 @@ override_dh_gencontrol:
 	dh_gencontrol
 
 override_dh_install:
+	install -d debian/initramfs-tools-core/usr/sbin
 	sed -e 's,@BUSYBOX_PACKAGES@,$(wordlist 2,100,$(BUSYBOX_PACKAGES:%=or %)),;s,@VERSION@,$(DEB_VERSION),' \
 		mkinitramfs > debian/initramfs-tools-core/usr/sbin/mkinitramfs
 	chmod 755 debian/initramfs-tools-core/usr/sbin/mkinitramfs

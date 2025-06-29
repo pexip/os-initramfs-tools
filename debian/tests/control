@@ -2,6 +2,10 @@ Tests: copy-file
 Restrictions: needs-root, breaks-testbed, skip-not-installable, superficial, allow-stderr
 Depends: linux-image-generic, zstd, @
 
+Tests: unmkinitramfs
+Restrictions: superficial
+Depends: bzip2, xz-utils, lzop, lz4, zstd, @
+
 Tests: qemu-klibc
 Architecture: amd64 armhf s390x
 Restrictions: needs-root, breaks-testbed
