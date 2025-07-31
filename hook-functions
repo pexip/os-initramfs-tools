@@ -820,7 +820,7 @@ auto_add_modules()
 		;;
 		scsi)
 			_call_dracut_install -s "${blockfuncs}|iscsi_register_transport" \
-				"=drivers/message/fusion" "=drivers/scsi"
+				"=drivers/message/fusion" "=drivers/s390/scsi" "=drivers/scsi"
 			# The following modules are not covered by the symbol filter
 			# in the previous call but should be included anyway.
 			modules="$modules cxgb3i cxgb4i scsi_dh_alua scsi_dh_emc"

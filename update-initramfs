@@ -14,10 +14,6 @@ set -e
 if [ -n "$DPKG_MAINTSCRIPT_PACKAGE" ] && [ $# = 1 ] && [ "$1" = -u ]; then
 	if dpkg-trigger --no-await update-initramfs; then
 		echo "update-initramfs: deferring update (trigger activated)"
-		# The /run/update-initramfs.dpkg-trigger file is just a workaround.
-		# The timestamp should be provided directly by the dpkg trigger.
-		# See https://bugs.debian.org/1099136
-		touch /run/update-initramfs.dpkg-trigger
 		exit 0
 	fi
 fi

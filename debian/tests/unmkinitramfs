@@ -1,0 +1,127 @@
+#!/bin/sh
+set -eu
+
+make_one_archive() {
+	local type="$1"
+	local i="$2"
+	local dir_name
+	local j
+
+	case "$type" in
+	early)
+		dir_name=kernel
+		;;
+	main)
+		dir_name="dir$i"
+		;;
+	*)
+		echo >&2 "E: Bad archive type $type"
+		exit 1
+		;;
+	esac
+
+	mkdir -p "$AUTOPKGTEST_TMP/input/$type$i/$dir_name"
+	for j in $(seq 0 9); do
+		size=$((j * 987 + i * 654 + 321))
+		dd if=/dev/urandom of="$AUTOPKGTEST_TMP/input/$type$i/$dir_name/file$j" \
+		   bs="$size" count=1 status=none
+	done
+	(
+		cd "$AUTOPKGTEST_TMP/input/$type$i"
+		find . | cpio -H newc -o --quiet > ../"$type$i.cpio"
+	)
+}
+
+# Create input files and archives
+mkdir "$AUTOPKGTEST_TMP/input"
+for in_type in early main; do
+	for i in 0 1 2; do
+		make_one_archive "$in_type" "$i"
+	done
+done
+
+# Dummy compressor; wrapper for cat that ignores its argument (-c)
+no_compressor() {
+	# shellcheck disable=SC2317
+	cat
+}
+
+rc=0
+
+# Test up to 2 early and 2 main cpio archives, and all supported
+# compressors (including none) for the last main archive
+for n_early in 0 1 2; do
+	for n_main in 0 1 2; do
+		# There must be at least 1 archive
+		if [ $((n_early + n_main)) -eq 0 ]; then
+			continue
+		fi
+
+		for compressor in no_compressor gzip bzip2 xz lzop 'lz4 -l' zstd; do
+			# If last archive is early, it can't be compressed
+			if [ $n_main -eq 0 ] && [ "$compressor" != no_compressor ]; then
+				continue
+			fi
+
+			echo "I: Testing $n_early early + $n_main main archive(s) with $compressor"
+
+			# Construct initramfs image
+			: > "$AUTOPKGTEST_TMP/initrd.img"
+			for i in $(seq 0 $((n_early - 1))); do
+				cat "$AUTOPKGTEST_TMP/input/early$i.cpio" \
+				    >> "$AUTOPKGTEST_TMP/initrd.img"
+			done
+			for i in $(seq 0 $((n_main - 2))); do
+				cat "$AUTOPKGTEST_TMP/input/main$i.cpio" \
+				    >> "$AUTOPKGTEST_TMP/initrd.img"
+			done
+			if [ $n_main -ge 1 ]; then
+				$compressor -c < "$AUTOPKGTEST_TMP/input/main$((n_main - 1)).cpio" \
+					    >> "$AUTOPKGTEST_TMP/initrd.img"
+			fi
+
+			# Unpack it
+			rm -rf "$AUTOPKGTEST_TMP/output"
+			unmkinitramfs "$AUTOPKGTEST_TMP/initrd.img" \
+				      "$AUTOPKGTEST_TMP/output" \
+				|| {
+				echo >&2 'E: unmkinitramfs failed'
+				rc=1
+				continue
+			}
+
+			# Construct what we expect output to look like
+			rm -rf "$AUTOPKGTEST_TMP/reference"
+			mkdir "$AUTOPKGTEST_TMP/reference"
+			for i in $(seq 0 $((n_early - 1))); do
+				if [ "$i" -eq 0 ]; then
+					dir_name=early
+				else
+					dir_name=early$((i + 1))
+				fi
+				ln -s ../input/"early$i" \
+				   "$AUTOPKGTEST_TMP/reference/$dir_name"
+			done
+			for i in $(seq 0 $((n_main - 1))); do
+				if [ $n_early = 0 ]; then
+					ln -s ../input/"main$i/dir$i" \
+					   "$AUTOPKGTEST_TMP/reference/dir$i"
+				else
+					mkdir -p "$AUTOPKGTEST_TMP/reference/main"
+					ln -s ../../input/"main$i/dir$i" \
+					   "$AUTOPKGTEST_TMP/reference/main/dir$i"
+				fi
+			done
+
+			# Compare reference and output
+			diff -r "$AUTOPKGTEST_TMP/reference" \
+			     "$AUTOPKGTEST_TMP/output" \
+				|| {
+				echo >&2 'E: Output files do not match input'
+				rc=1
+			}
+		done
+	done
+done
+
+exit $rc

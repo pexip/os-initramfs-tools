@@ -5,4 +5,3 @@ hooks			usr/share/initramfs-tools
 init			usr/share/initramfs-tools
 lsinitramfs		usr/bin
 scripts			usr/share/initramfs-tools
-unmkinitramfs		usr/bin

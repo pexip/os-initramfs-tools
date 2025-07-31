@@ -7,13 +7,8 @@ if [ "x$1" != xtriggered ]; then
 	# this activates the trigger, if triggers are working
 	update-initramfs -u
 else
-	# The /run/update-initramfs.dpkg-trigger file is just a workaround.
-	# The timestamp should be provided directly by the dpkg trigger.
-	# See https://bugs.debian.org/1099136
-	timestamp=$(stat -c %Y /run/update-initramfs.dpkg-trigger 2>/dev/null || true)
-	# force it to actually happen (if not already updated since activation)
-	DPKG_MAINTSCRIPT_PACKAGE='' update-initramfs -u -s "$timestamp"
-	rm -f /run/update-initramfs.dpkg-trigger
+	# force it to actually happen
+	DPKG_MAINTSCRIPT_PACKAGE='' update-initramfs -u
 fi
 
 #DEBHELPER#

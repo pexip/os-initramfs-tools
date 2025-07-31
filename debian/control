@@ -32,6 +32,7 @@ Recommends: zstd, ${busybox:Recommends}
 Depends: coreutils (>= 8.24),
          cpio (>= 2.12),
          dracut-install,
+         initramfs-tools-bin (>= ${source:Version}),
          klibc-utils (>= 2.0.4-8~),
          kmod,
          logsave | e2fsprogs (<< 1.45.3-1~),
@@ -44,3 +45,13 @@ Description: generic modular initramfs generator (core tools)
  create a bootable initramfs for a Linux kernel.  The initramfs should
  be loaded along with the kernel and is then responsible for mounting
  the root filesystem and starting the main init system.
+
+Package: initramfs-tools-bin
+Architecture: any
+Multi-Arch: foreign
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Breaks: initramfs-tools-core (<< 0.148~)
+Replaces: initramfs-tools-core (<< 0.148~)
+Description: generic modular initramfs generator (binary tools)
+ This package contains the unmkinitramfs program that can be used to
+ unpack an initramfs image.

@@ -4,11 +4,6 @@ include:
 
 variables:
   RELEASE: 'unstable'
-  # We only build arch:all packages
-  SALSA_CI_DISABLE_BLHC: 'true'
-  SALSA_CI_DISABLE_BUILD_PACKAGE_I386: 'true'
-  SALSA_CI_DISABLE_BUILD_PACKAGE_ANY: 'true'
-  SALSA_CI_DISABLE_CROSSBUILD_ARM64: 'true'
 
 shellcheck:
   stage: test

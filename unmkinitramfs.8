@@ -18,8 +18,8 @@ command extracts the content of a given initramfs image using
 and the appropriate decompressor command.
 
 The initramfs image may be a single compressed cpio archive, or the
-concatenation of any number of uncompressed cpio archives followed by
-a compressed cpio archive.
+concatenation of any number of uncompressed cpio archives optionally
+followed by a compressed cpio archive.
 
 When the initramfs image includes one or more "early initramfs"
 archives, that is uncompressed archives with microcode or other files
@@ -51,8 +51,8 @@ Extract initramfs content of current running kernel:
 
 .SH BUGS
 .BR unmkinitramfs
-does not support initramfs images with more or less than one
-compressed cpio archive.
+does not support initramfs images with more than one compressed cpio
+archive.
 
 .SH AUTHOR
 The initramfs-tools are written by Maximilian Attems <maks@debian.org>
