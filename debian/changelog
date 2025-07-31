@@ -1,3 +1,9 @@
+initramfs-tools (0.148.3+pexip25u1) pexip-trixie; urgency=medium
+
+  * New upstream release
+
+ -- Mark Hymers <mark.hymers@pexip.com>  Thu, 31 Jul 2025 13:27:33 +0100
+
 initramfs-tools (0.148.3) unstable; urgency=medium
 
   [ Benjamin Drung ]
