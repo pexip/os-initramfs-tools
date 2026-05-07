@@ -1,6 +1,7 @@
 /* unmkinitramfs: Unpack an initramfs */
 
 #include <assert.h>
+#include <ctype.h>
 #include <errno.h>
 #include <limits.h>
 #include <stdbool.h>
@@ -166,7 +167,7 @@ static bool cpio_parse_hex(const char *field, uint32_t *value_p)
 
 	/* Parse digits up to end of field or null */
 	for (; i < 8 && field[i] != 0; ++i) {
-		p = strchr(digits, field[i]);
+		p = strchr(digits, (char)toupper((unsigned char)field[i]));
 		if (!p)
 			return false;
 		value = (value << 4) | (p - digits);

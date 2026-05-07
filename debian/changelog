@@ -1,3 +1,17 @@
+initramfs-tools (0.148.4) trixie; urgency=medium
+
+  [ Aurelien Jarno ]
+  * [8e1a6f5] d/salsa-ci.yml: Set RELEASE to trixie
+
+  [ E Shattow ]
+  * [2331eab] hook-functions: Add Cadence USB driver to base (Closes:
+    #1108924)
+
+  [ Ben Hutchings ]
+  * [45d5661] unmkinitramfs: Accept lower-case hex digits in cpio headers
+
+ -- Ben Hutchings <benh@debian.org>  Thu, 07 May 2026 10:04:09 +0200
+
 initramfs-tools (0.148.3) unstable; urgency=medium
 
   [ Benjamin Drung ]
