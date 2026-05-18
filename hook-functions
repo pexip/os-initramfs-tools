@@ -734,6 +734,7 @@ auto_add_modules()
 				hwa-hc.ko sl811_cs.ko sl811-hcd.ko \
 				u132-hcd.ko whci-hcd.ko
 			modules="$modules =drivers/usb/c67x00"
+			modules="$modules =drivers/usb/cdns3"
 			modules="$modules =drivers/usb/chipidea"
 			modules="$modules =drivers/usb/dwc2"
 			modules="$modules =drivers/usb/dwc3"
