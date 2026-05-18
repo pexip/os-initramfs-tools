@@ -1,3 +1,9 @@
+initramfs-tools (0.148.4+deb13u0+pexip25u1) pexip-trixie; urgency=medium
+
+  * New upstream build
+
+ -- Huw Jones <huw@pexip.com>  Mon, 18 May 2026 15:20:19 +0100
+
 initramfs-tools (0.148.4) trixie; urgency=medium
 
   [ Aurelien Jarno ]
